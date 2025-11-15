@@ -9,13 +9,13 @@ from firebase_admin import credentials, initialize_app, firestore
 # --- Global Configuration and Initialization ---
 
 # MANDATORY variables provided by the environment
-app_id = os.environ.get('__app_id', 'default-inventory-app')
+app_id = os.environ.get('FLASK_APP', 'default-inventory-app')
 # The primary expected variable, but we will now check for the file path as well.
-firebase_config_json = os.environ.get('__firebase_config') 
+firebase_config_json = os.environ.get('serviceAccountKey.json')
 
-github_token = os.environ.get('__github_token', 'YOUR_GITHUB_TOKEN')
-github_username = os.environ.get('__github_username', 'YOUR_GITHUB_USERNAME')
-github_repo = os.environ.get('__github_repo', 'YOUR_GITHUB_REPO')
+github_token = os.environ.get('GITHUB_TOKEN', 'YOUR_GITHUB_TOKEN')
+github_username = os.environ.get('GITHUB_REPO_OWNER', 'YOUR_GITHUB_USERNAME')
+github_repo = os.environ.get('GITHUB_REPO_NAME', 'YOUR_GITHUB_REPO')
 
 # Firestore paths
 FIRESTORE_COLLECTION = f"artifacts/{app_id}/public/data/inventory_items"

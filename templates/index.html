@@ -178,25 +178,33 @@
         // --- Data Fetching and Rendering ---
 
         async function fetchInventory() {
-            const loadingIndicator = document.getElementById('loading-indicator');
-            loadingIndicator.style.display = 'flex';
+            // NOTE: We only show the list loading indicator before the initial fetch,
+            // not after subsequent CRUD operations, to prevent the "null" error.
+            const initialLoad = inventoryData.length === 0;
+            if (initialLoad) {
+                document.getElementById('loading-indicator').style.display = 'flex';
+            }
 
             try {
                 const response = await fetch(API_URL);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
+                // The backend must return a JSON array of items
                 const data = await response.json();
                 inventoryData = data; // Store full list globally
                 renderInventoryList(inventoryData); // Render all items initially
             } catch (error) {
                 console.error('Failed to fetch inventory:', error);
-                showNotification('Could not load inventory data. Check server connection.', 'error');
+                showNotification('Could not load inventory data. Check server connection and API.', 'error');
                 document.getElementById('inventory-list').innerHTML = `
-                    <p class="text-red-600 p-4 bg-red-50 rounded-lg">Error loading data. Please check the console for details.</p>
+                    <p class="text-red-600 p-4 bg-red-50 rounded-lg">Error loading data. Is the /api/items endpoint configured?</p>
                 `;
             } finally {
-                loadingIndicator.style.display = 'none';
+                // Only hide the initial loading indicator
+                if (initialLoad) {
+                    document.getElementById('loading-indicator').style.display = 'none';
+                }
                 renderIcons();
             }
         }
