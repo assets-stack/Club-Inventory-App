@@ -2,7 +2,7 @@ import os
 import base64
 import requests
 from flask import Flask, render_template, request, redirect, url_for
-from firebase-admin import credentials, initialize_app, firestore
+from firebase_admin import credentials, initialize_app, firestore
 from werkzeug.utils import secure_filename
 
 # Configuration
