@@ -20,25 +20,34 @@ FIRESTORE_COLLECTION = f"artifacts/{app_id}/public/data/inventory_items"
 FIREBASE_CONFIG = {}
 
 # Initialize Firebase
+db = None # Initialize db as None
 try:
-    if firebase_config_json:
-        FIREBASE_CONFIG = json.loads(firebase_config_json)
-
-    # Check if a Firestore service account is available
-    if FIREBASE_CONFIG and 'private_key' in FIREBASE_CONFIG:
-        cred = credentials.Certificate(FIREBASE_CONFIG)
-        initialize_app(cred)
-        db = firestore.client()
-        print("Firebase successfully initialized with service account.")
-    else:
-        # Fallback for environments without a service account (e.g., local testing)
-        print("Firebase configuration missing private key. Using generic initialization (may fail in production).")
+    if not firebase_config_json:
+        print("CRITICAL WARNING: The '__firebase_config' environment variable is missing or empty. Database operations will fail.")
+        # Proceeding without config, likely to fail, but allows app to start.
         initialize_app()
-        db = firestore.client()
+    else:
+        FIREBASE_CONFIG = json.loads(firebase_config_json)
+        
+        if FIREBASE_CONFIG and 'private_key' in FIREBASE_CONFIG:
+            # This is the expected successful path using provided service credentials
+            cred = credentials.Certificate(FIREBASE_CONFIG)
+            initialize_app(cred)
+            print("Firebase successfully initialized with service account.")
+        else:
+            # Config JSON exists but is incomplete (e.g., missing 'private_key')
+            print("WARNING: Firebase config is present but missing the 'private_key' for service account initialization. Attempting generic initialization.")
+            initialize_app()
 
+    # Attempt to get the Firestore client if initialization succeeded
+    db = firestore.client()
+    print("Firestore client successfully obtained.")
+
+except json.JSONDecodeError as e:
+    print(f"CRITICAL ERROR: Failed to decode '__firebase_config' JSON: {e}. DB connection will be unavailable.")
 except Exception as e:
-    print(f"Error initializing Firebase: {e}")
-    db = None # Ensures no Firestore operations are attempted if initialization fails
+    print(f"CRITICAL ERROR: Failed to initialize Firebase or get client: {e}. DB connection will be unavailable.")
+
 
 # --- Flask App Setup ---
 app = Flask(__name__)
@@ -56,18 +65,18 @@ def upload_to_github(file_data, filename):
 
     # Encode file data to Base64
     encoded_content = base64.b64encode(file_data.read()).decode('utf-8')
-
+    
     # Use a unique, timestamped path within the repo
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     path = f"inventory_photos/{timestamp}_{filename}"
 
     url = f"https://api.github.com/repos/{github_username}/{github_repo}/contents/{path}"
-
+    
     headers = {
         "Authorization": f"token {github_token}",
         "Accept": "application/vnd.github.v3.raw",
     }
-
+    
     payload = {
         "message": f"Add {filename} for inventory item",
         "content": encoded_content
@@ -76,14 +85,14 @@ def upload_to_github(file_data, filename):
     try:
         response = requests.put(url, headers=headers, json=payload)
         response.raise_for_status() # Raises HTTPError for bad responses (4xx or 5xx)
-
+        
         # The API response contains the content URL
-        api_response_data = response.json()
-
+        # api_response_data = response.json()
+        
         # Construct the raw GitHub Pages URL for public access
         # Format: https://<username>.github.io/<repo>/<path>
         raw_url = f"https://{github_username}.github.io/{github_repo}/{path}"
-
+        
         print(f"Successfully uploaded to GitHub. Raw URL: {raw_url}")
         return raw_url
 
@@ -108,8 +117,10 @@ def inventory_homepage():
 @app.route('/api/items', methods=['GET'])
 def get_inventory():
     """Fetches all items from Firestore and returns them as a JSON array."""
+    # Check if the database client was successfully initialized
     if not db:
-        return jsonify({"error": "Database not initialized."}), 500
+        print("ERROR: API call failed because DB client is None.")
+        return jsonify({"error": "Database not initialized. Check server logs for config errors."}), 500
 
     try:
         items_ref = db.collection(FIRESTORE_COLLECTION).stream()
@@ -118,23 +129,23 @@ def get_inventory():
             item = doc.to_dict()
             item['id'] = doc.id  # Use the Firestore document ID as the item ID
             inventory.append(item)
-
+        
         # Sort items by name before sending to client for consistent display
         inventory.sort(key=lambda x: x.get('name', ''))
-
+            
         return jsonify(inventory), 200
 
     except Exception as e:
         print(f"Error fetching inventory: {e}")
-        return jsonify({"error": f"Failed to retrieve inventory: {e}"}), 500
+        return jsonify({"error": f"Failed to retrieve inventory from Firestore: {e}"}), 500
 
 
 @app.route('/api/items', methods=['POST'])
 def add_item():
     """Handles adding a new item, including file upload to GitHub."""
     if not db:
-        return jsonify({"error": "Database not initialized."}), 500
-
+        return jsonify({"error": "Database not initialized. Check server logs."}), 500
+        
     name = request.form.get('name')
     category = request.form.get('category')
     photo_file = request.files.get('photo')
@@ -146,7 +157,7 @@ def add_item():
     if photo_file and photo_file.filename:
         # Check file extension and content type for security
         filename = photo_file.filename
-
+        
         # Upload file and get the public URL
         photo_url = upload_to_github(photo_file, filename)
         if not photo_url:
@@ -164,12 +175,12 @@ def add_item():
 
         # Add document to Firestore, letting Firestore generate the ID
         doc_ref = db.collection(FIRESTORE_COLLECTION).add(new_item)[1]
-
+        
         new_item['id'] = doc_ref.id # Add ID to the response
-
+        
         # Convert timestamp object to string for JSON response
-        new_item.pop('created_at', None)
-
+        new_item.pop('created_at', None) 
+        
         return jsonify(new_item), 201
 
     except Exception as e:
@@ -181,16 +192,16 @@ def add_item():
 def delete_item(item_id):
     """Handles deleting an item by its ID."""
     if not db:
-        return jsonify({"error": "Database not initialized."}), 500
+        return jsonify({"error": "Database not initialized. Check server logs."}), 500
 
     try:
         doc_ref = db.collection(FIRESTORE_COLLECTION).document(item_id)
         # Check if item exists before attempting delete (optional, but good practice)
         if not doc_ref.get().exists:
             return jsonify({"error": "Item not found."}), 404
-
+            
         doc_ref.delete()
-
+        
         return jsonify({"message": f"Item {item_id} deleted successfully."}), 200
 
     except Exception as e:
@@ -202,7 +213,7 @@ def delete_item(item_id):
 def update_item_status(item_id):
     """Handles updating an item's status by its ID."""
     if not db:
-        return jsonify({"error": "Database not initialized."}), 500
+        return jsonify({"error": "Database not initialized. Check server logs."}), 500
 
     try:
         data = request.get_json()
@@ -212,13 +223,13 @@ def update_item_status(item_id):
             return jsonify({"error": "Invalid status value."}), 400
 
         doc_ref = db.collection(FIRESTORE_COLLECTION).document(item_id)
-
+        
         # Ensure the item exists
         if not doc_ref.get().exists:
             return jsonify({"error": "Item not found."}), 404
 
         doc_ref.update({'status': new_status})
-
+        
         return jsonify({"message": f"Status for item {item_id} updated to {new_status}."}), 200
 
     except Exception as e:
