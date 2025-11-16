@@ -239,7 +239,13 @@ def delete_item(item_id):
         if not doc_ref.get().exists:
             return jsonify({"error": "Item not found."}), 404
 
+        item_data = doc_ref.get().to_dict()
+        photo_url = item_data.get('photo_url')
+
         doc_ref.delete()
+
+        if photo_url:
+            delete_from_github(photo_url)
 
         return jsonify({"message": f"Item {item_id} deleted successfully."}), 200
 
