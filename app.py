@@ -13,7 +13,7 @@ app_id = os.environ.get('FLASK_APP', 'default-inventory-app')
 # The primary expected variable, but we will now check for the file path as well.
 firebase_config_json = os.environ.get('serviceAccountKey.json')
 
-github_token = os.environ.get('GITHUB_TOKEN', 'YOUR_GITHUB_TOKEN')
+github_token = os.environ.get('GITHUB_TOKEN')
 github_username = os.environ.get('GITHUB_REPO_OWNER', 'YOUR_GITHUB_USERNAME')
 github_repo = os.environ.get('GITHUB_REPO_NAME', 'YOUR_GITHUB_REPO')
 
@@ -98,13 +98,13 @@ def upload_to_github(file_data, filename):
     Returns the raw public URL to the file, suitable for the web application.
     """
     # Check for placeholder values
-    # if github_token == 'YOUR_GITHUB_TOKEN' or github_username == 'YOUR_GITHUB_USERNAME' or github_repo == 'YOUR_GITHUB_REPO':
-    #     print("GitHub credentials missing or using placeholders. Cannot upload photo.")
-    #     return None
+    if github_token == 'YOUR_GITHUB_TOKEN' or github_username == 'YOUR_GITHUB_USERNAME' or github_repo == 'YOUR_GITHUB_REPO':
+        print("GitHub credentials missing or using placeholders. Cannot upload photo.")
+        return None
         
-    # if not github_token or not github_username or not github_repo:
-    #     print("GitHub credentials missing. Cannot upload photo.")
-    #     return None
+    if not github_token or not github_username or not github_repo:
+        print("GitHub credentials missing. Cannot upload photo.")
+        return None
 
     # Encode file data to Base64
     encoded_content = base64.b64encode(file_data.read()).decode('utf-8')
