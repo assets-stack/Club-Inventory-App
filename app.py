@@ -25,31 +25,6 @@ db = None # Initialize db as None
 # Define the expected path for the secret file based on your environment's guidance
 SECRET_FILE_PATH = "/etc/secrets/serviceAccountKey.json"
 
-# --- Mock Data Storage (Used if Firebase connection fails) ---
-MOCK_INVENTORY = [
-    {
-        'id': 'mock-1', 
-        'name': 'Sony a7S III', 
-        'category': 'Cameras', 
-        'status': 'Available', 
-        'photo_url': 'https://placehold.co/80x80/0d9488/ffffff?text=Camera'
-    },
-    {
-        'id': 'mock-2', 
-        'name': 'Zoom H6 Recorder', 
-        'category': 'Audio', 
-        'status': 'Checked Out', 
-        'photo_url': 'https://placehold.co/80x80/7e22ce/ffffff?text=Audio'
-    },
-    {
-        'id': 'mock-3', 
-        'name': '50mm f/1.4 Lens', 
-        'category': 'Lenses', 
-        'status': 'Available', 
-        'photo_url': 'https://placehold.co/80x80/059669/ffffff?text=Lens'
-    },
-]
-
 # Initialize Firebase
 try:
     # 1. Check for the Secret File first (based on your environment setup)
@@ -58,7 +33,7 @@ try:
         with open(SECRET_FILE_PATH, 'r') as f:
             FIREBASE_CONFIG = json.load(f)
             firebase_config_json = json.dumps(FIREBASE_CONFIG) # Set variable for consistency
-    
+
     # 2. If the file was not found, check the environment variable (original method)
     elif firebase_config_json:
         print("INFO: Found Firebase credentials in '__firebase_config' environment variable.")
@@ -97,29 +72,21 @@ def upload_to_github(file_data, filename):
     Uploads a file to a specific path in the configured GitHub repository.
     Returns the raw public URL to the file, suitable for the web application.
     """
-    # Check for placeholder values
-    if github_token == 'YOUR_GITHUB_TOKEN' or github_username == 'YOUR_GITHUB_USERNAME' or github_repo == 'YOUR_GITHUB_REPO':
-        print("GitHub credentials missing or using placeholders. Cannot upload photo.")
-        return None
-        
-    if not github_token or not github_username or not github_repo:
-        print("GitHub credentials missing. Cannot upload photo.")
-        return None
 
     # Encode file data to Base64
     encoded_content = base64.b64encode(file_data.read()).decode('utf-8')
-    
+
     # Use a unique, timestamped path within the repo
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     path = f"inventory_photos/{timestamp}_{filename}"
 
     url = f"https://api.github.com/repos/{github_username}/{github_repo}/contents/{path}"
-    
+
     headers = {
         "Authorization": f"token {github_token}",
         "Accept": "application/vnd.github.v3.raw",
     }
-    
+
     payload = {
         "message": f"Add {filename} for inventory item",
         "content": encoded_content
@@ -128,10 +95,10 @@ def upload_to_github(file_data, filename):
     try:
         response = requests.put(url, headers=headers, json=payload)
         response.raise_for_status() # Raises HTTPError for bad responses (4xx or 5xx)
-        
+
         # Construct the raw GitHub Pages URL for public access
         raw_url = f"https://{github_username}.github.io/{github_repo}/{path}"
-        
+
         print(f"Successfully uploaded to GitHub. Raw URL: {raw_url}")
         return raw_url
 
@@ -144,6 +111,54 @@ def upload_to_github(file_data, filename):
             pass
         return None
 
+def get_github_file_path(photo_url):
+    """Extracts the GitHub repository path from the public URL."""
+    prefix = f"https://{github_username}.github.io/{github_repo}/"
+    if photo_url and photo_url.startswith(prefix):
+        return photo_url[len(prefix):]
+    return None
+
+def delete_from_github(photo_url):
+    """Deletes a file from the GitHub repository based on its public URL."""
+    path = get_github_file_path(photo_url)
+    if not path:
+        print("Invalid photo URL; cannot extract GitHub path.")
+        return False
+
+    url = f"https://api.github.com/repos/{github_username}/{github_repo}/contents/{path}"
+
+    headers = {
+        "Authorization": f"token {github_token}",
+        "Accept": "application/vnd.github.v3+json",
+    }
+
+    # First, get the SHA of the file to delete
+    try:
+        get_response = requests.get(url, headers=headers)
+        get_response.raise_for_status()
+        file_info = get_response.json()
+        sha = file_info.get('sha')
+
+        if not sha:
+            print(f"SHA not found for {path}. Cannot delete file.")
+            return False
+
+        # Now, delete the file
+        payload = {
+            "message": f"Delete {path} from inventory photos",
+            "sha": sha
+        }
+
+        delete_response = requests.delete(url, headers=headers, json=payload)
+        delete_response.raise_for_status()
+
+        print(f"Successfully deleted {path} from GitHub.")
+        return True
+
+    except requests.exceptions.RequestException as e:
+        print(f"GitHub API Error during deletion: {e}")
+        return False
+
 # --- Flask Routes ---
 
 @app.route('/')
@@ -155,11 +170,7 @@ def inventory_homepage():
 
 @app.route('/api/items', methods=['GET'])
 def get_inventory():
-    """Fetches all items from Firestore or returns mock data if connection fails."""
-    if not db:
-        print("Returning MOCK data.")
-        # Ensure mock data is returned sorted by name
-        return jsonify(sorted(MOCK_INVENTORY, key=lambda x: x.get('name', ''))), 200
+    """Fetches all items from Firestore"""
 
     try:
         items_ref = db.collection(FIRESTORE_COLLECTION).stream()
@@ -168,9 +179,9 @@ def get_inventory():
             item = doc.to_dict()
             item['id'] = doc.id
             inventory.append(item)
-        
+
         inventory.sort(key=lambda x: x.get('name', ''))
-            
+
         return jsonify(inventory), 200
 
     except Exception as e:
@@ -182,7 +193,7 @@ def get_inventory():
 
 @app.route('/api/items', methods=['POST'])
 def add_item():
-    """Handles adding a new item, using mock logic if no DB connection."""
+    """Handles adding a new item"""
     name = request.form.get('name')
     category = request.form.get('category')
     photo_file = request.files.get('photo')
@@ -206,13 +217,6 @@ def add_item():
         'photo_url': photo_url,
     }
 
-    if not db:
-        # MOCK MODE: Add to mock list and simulate a successful response
-        new_item_data['id'] = f"mock-{len(MOCK_INVENTORY) + 1}"
-        MOCK_INVENTORY.append(new_item_data)
-        print(f"MOCK MODE: Added item {name}")
-        return jsonify(new_item_data), 201
-        
     try:
         # FIREBASE MODE
         doc_ref = db.collection(FIRESTORE_COLLECTION).add({
@@ -229,24 +233,14 @@ def add_item():
 
 @app.route('/api/items/<item_id>', methods=['DELETE'])
 def delete_item(item_id):
-    """Handles deleting an item by its ID, using mock logic if no DB connection."""
-    if not db:
-        # MOCK MODE: Find and remove from mock list
-        global MOCK_INVENTORY
-        initial_len = len(MOCK_INVENTORY)
-        MOCK_INVENTORY = [item for item in MOCK_INVENTORY if item['id'] != item_id]
-        if len(MOCK_INVENTORY) < initial_len:
-            print(f"MOCK MODE: Deleted item {item_id}")
-            return jsonify({"message": f"MOCK DELETED: Item {item_id} deleted successfully."}), 200
-        return jsonify({"error": "MOCK ERROR: Item not found."}), 404
-
+    """Handles deleting an item by its ID"""
     try:
         doc_ref = db.collection(FIRESTORE_COLLECTION).document(item_id)
         if not doc_ref.get().exists:
             return jsonify({"error": "Item not found."}), 404
-            
+
         doc_ref.delete()
-        
+
         return jsonify({"message": f"Item {item_id} deleted successfully."}), 200
 
     except Exception as e:
@@ -256,22 +250,12 @@ def delete_item(item_id):
 
 @app.route('/api/items/<item_id>/status', methods=['PUT'])
 def update_item_status(item_id):
-    """Handles updating an item's status, using mock logic if no DB connection."""
+    """Handles updating an item's status"""
     data = request.get_json()
     new_status = data.get('status')
 
     if new_status not in ['Available', 'Checked Out']:
         return jsonify({"error": "Invalid status value."}), 400
-
-    if not db:
-        # MOCK MODE: Update status in mock list
-        for item in MOCK_INVENTORY:
-            if item['id'] == item_id:
-                item['status'] = new_status
-                print(f"MOCK MODE: Updated status for {item_id} to {new_status}")
-                return jsonify({"message": f"MOCK UPDATED: Status for item {item_id} updated to {new_status}."}), 200
-        return jsonify({"error": "MOCK ERROR: Item not found."}), 404
-
 
     try:
         doc_ref = db.collection(FIRESTORE_COLLECTION).document(item_id)
@@ -279,7 +263,7 @@ def update_item_status(item_id):
             return jsonify({"error": "Item not found."}), 404
 
         doc_ref.update({'status': new_status})
-        
+
         return jsonify({"message": f"Status for item {item_id} updated to {new_status}."}), 200
 
     except Exception as e:
