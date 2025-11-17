@@ -15,6 +15,13 @@
             .item-card { transition: all 0.3s ease; }
             .item-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
             .notification { transition: opacity 0.5s ease-in-out; }
+
+            .grid-photo-container {
+                /* Ensures a nice aspect ratio for the photo */
+                aspect-ratio: 4/3;
+                width: 100%;
+                overflow: hidden;
+            }
         </style>
     </head>
     <body class="min-h-screen p-4 md:p-8">
@@ -358,46 +365,86 @@
 
                     const card = document.createElement('div');
                     if (currentView === 'grid') {
-                        card.className = 'item-card bg-white border border-gray-200 rounded-xl shadow-md p-4 flex flex-col items-center text-center';
+                        card.className = 'item-card bg-white border border-gray-200 rounded-xl shadow-md flex flex-col items-center text-center overflow-hidden';
+
+                        // Grid View HTML structure (larger image)
+                        card.innerHTML = `
+                            <!-- Photo (Larger in Grid) -->
+                            <div class="grid-photo-container">
+                                <img src="${item.photo_url || 'https://placehold.co/600x450/cccccc/333333?text=No+Photo'}"
+                                    alt="${title} photo"
+                                    class="w-full h-full object-cover"
+                                    onerror="this.onerror=null;this.src='https://placehold.co/600x450/cccccc/333333?text=No+Photo';">
+                            </div>
+
+                            <!-- Details below photo -->
+                            <div class="p-4 w-full">
+                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-700">${item.asset_type}</span>
+                                <h3 class="text-lg font-bold text-gray-900 mt-1 truncate">${title}</h3>
+                                <p class="text-sm text-gray-500 truncate">
+                                    <i class="fas ${getAssetIcon(item.asset_type)} mr-2 text-indigo-500"></i> ${description}
+                                </p>
+                                <p class="text-sm text-gray-600 font-medium mt-1 truncate">${countInfo}</p>
+
+                                <div class="flex items-center justify-between mt-3">
+                                    <span class="px-3 py-1 text-xs font-semibold rounded-full ${statusClass} flex-shrink-0">
+                                        ${item.status}
+                                    </span>
+                                    <!-- Actions -->
+                                    <div class="flex space-x-2 flex-shrink-0">
+                                        <button onclick="handleStatusToggle('${item.id}', '${item.status}')"
+                                                class="py-1 px-3 text-sm font-medium text-white rounded-lg shadow-sm ${buttonColor} transition ease-in-out duration-150">
+                                            ${buttonText}
+                                        </button>
+                                        <button onclick="handleDelete('${item.id}', '${title}')"
+                                                class="py-1 px-3 text-sm font-medium text-red-700 bg-red-100 rounded-lg shadow-sm hover:bg-red-200 transition ease-in-out duration-150">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+
                     } else {
+                        // List View HTML structure (Smaller image on the left)
                         card.className = 'item-card bg-white border border-gray-200 rounded-xl shadow-md p-4 flex items-center space-x-4';
+                        card.innerHTML = `
+                            <!-- Photo/Placeholder -->
+                            <div class="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-gray-300">
+                                <img src="${item.photo_url || 'https://placehold.co/80x80/cccccc/333333?text=No+Photo'}"
+                                    alt="${title} photo"
+                                    class="w-full h-full object-cover"
+                                    onerror="this.onerror=null;this.src='https://placehold.co/80x80/cccccc/333333?text=No+Photo';">
+                            </div>
+
+                            <!-- Item Details -->
+                            <div class="flex-grow">
+                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-700">${item.asset_type}</span>
+                                <h3 class="text-lg font-bold text-gray-900 mt-1">${title}</h3>
+                                <p class="text-sm text-gray-500">
+                                    <i class="fas ${getAssetIcon(item.asset_type)} mr-2 text-indigo-500"></i> ${description}
+                                </p>
+                                <p class="text-sm text-gray-600 font-medium mt-1">${countInfo}</p>
+                            </div>
+
+                            <!-- Status Tag -->
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full ${statusClass} flex-shrink-0">
+                                ${item.status}
+                            </span>
+
+                            <!-- Actions -->
+                            <div class="flex space-x-2 flex-shrink-0">
+                                <button onclick="handleStatusToggle('${item.id}', '${item.status}')"
+                                        class="py-1 px-3 text-sm font-medium text-white rounded-lg shadow-sm ${buttonColor} transition ease-in-out duration-150">
+                                    ${buttonText}
+                                </button>
+                                <button onclick="handleDelete('${item.id}', '${title}')"
+                                        class="py-1 px-3 text-sm font-medium text-red-700 bg-red-100 rounded-lg shadow-sm hover:bg-red-200 transition ease-in-out duration-150">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        `;
                     }
-                    card.innerHTML = `
-                        <!-- Photo/Placeholder -->
-                        <div class="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-gray-300">
-                            <img src="${item.photo_url || 'https://placehold.co/80x80/cccccc/333333?text=No+Photo'}"
-                                alt="${title} photo"
-                                class="w-full h-full object-cover"
-                                onerror="this.onerror=null;this.src='https://placehold.co/80x80/cccccc/333333?text=No+Photo';">
-                        </div>
-
-                        <!-- Item Details -->
-                        <div class="${currentView === 'grid' ? 'flex-grow w-full' : 'flex-grow'}">
-                            <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-700">${item.asset_type}</span>
-                            <h3 class="text-lg font-bold text-gray-900 mt-1">${title}</h3>
-                            <p class="text-sm text-gray-500">
-                                <i class="fas ${getAssetIcon(item.asset_type)} mr-2 text-indigo-500"></i> ${description}
-                            </p>
-                            <p class="text-sm text-gray-600 font-medium mt-1">${countInfo}</p>
-                        </div>
-
-                        <!-- Status Tag -->
-                        <span class="px-3 py-1 text-xs font-semibold rounded-full ${statusClass} flex-shrink-0">
-                            ${item.status}
-                        </span>
-
-                        <!-- Actions -->
-                        <div class="flex space-x-2 flex-shrink-0">
-                            <button onclick="handleStatusToggle('${item.id}', '${item.status}')"
-                                    class="py-1 px-3 text-sm font-medium text-white rounded-lg shadow-sm ${buttonColor} transition ease-in-out duration-150">
-                                ${buttonText}
-                            </button>
-                            <button onclick="handleDelete('${item.id}', '${title}')"
-                                    class="py-1 px-3 text-sm font-medium text-red-700 bg-red-100 rounded-lg shadow-sm hover:bg-red-200 transition ease-in-out duration-150">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </div>
-                    `;
                     listContainer.appendChild(card);
                 });
             }
