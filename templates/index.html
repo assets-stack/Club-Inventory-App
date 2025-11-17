@@ -527,9 +527,12 @@
 
             // 3. Delete Item
             async function handleDelete(itemId, itemName) {
-                // Replaced alert/confirm with a placeholder message due to sandbox constraints.
-                // In a real application, you'd use a custom modal here.
-                if (window.confirm(`Are you sure you want to delete "${itemName}"? This cannot be undone.`)) {
+                showConfirmationModal(
+                'Confirm Deletion',
+                `Are you absolutely sure you want to permanently delete "${itemName}"? This action cannot be reversed.`,
+                async (confirmed) => {
+                    if (!confirmed) return;
+
                     try {
                         const response = await fetch(`${API_URL}/${itemId}`, {
                             method: 'DELETE'
@@ -541,13 +544,14 @@
                         }
 
                         await fetchInventory();
-                        showNotification(`Successfully deleted asset: ${itemName}.`);
+                        showNotification(`Successfully deleted asset: ${itemName}.`, 'error');
 
                     } catch (error) {
                         console.error('Error deleting item:', error);
                         showNotification(error.message || 'Failed to delete asset.', 'error');
                     }
                 }
+            );
             }
             window.handleDelete = handleDelete;
 
@@ -565,7 +569,7 @@
             document.getElementById('filter-asset-type').addEventListener('change', filterAndSortInventory);
             document.getElementById('filter-status').addEventListener('change', filterAndSortInventory);
 
-            function updateView() {
+            function updateView(view) {
                 currentView = view;
                 const listButton = document.getElementById('view-list-button');
                 const gridButton = document.getElementById('view-grid-button');
