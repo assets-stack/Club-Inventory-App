@@ -125,6 +125,12 @@
             </div>
         </div>
 
+        <div id="notification-box"
+            class="fixed bottom-4 right-4 p-4 rounded-lg shadow-xl text-white transition-opacity duration-300 opacity-0 pointer-events-none"
+            style="min-width: 250px; z-index: 1000;">
+            <div id="notification-message" class="font-medium"></div>
+        </div>
+
         <!-- JavaScript Logic -->
         <script>
             const API_URL = '/api/items';
