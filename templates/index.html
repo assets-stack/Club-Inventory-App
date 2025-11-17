@@ -16,63 +16,11 @@
             .item-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
             .notification { transition: opacity 0.5s ease-in-out; }
 
-            /* Notification Area - Ensure Z-index is high */
-            #notification-area {
-                position: fixed;
-                top: 1rem;
-                right: 1rem;
-                z-index: 9999; /* Higher z-index for visibility */
-                pointer-events: none; /* Allows clicks to pass through if needed */
-            }
-            .notification { 
-                transition: opacity 0.5s ease-in-out; 
-                pointer-events: auto; /* Re-enable pointer events for the notification itself */
-                margin-bottom: 0.75rem; /* Space between notifications */
-            }
-
             .grid-photo-container {
                 /* Ensures a nice aspect ratio for the photo */
                 aspect-ratio: 4/3;
                 width: 100%;
                 overflow: hidden;
-            }
-
-            .modal {
-                display: none; /* Hidden by default */
-                position: fixed;
-                z-index: 1000;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: 100%;
-                overflow: auto;
-                background-color: rgba(0, 0, 0, 0.4);
-                padding-top: 50px;
-            }
-            .modal-content {
-                background-color: #fefefe;
-                margin: auto;
-                padding: 20px;
-                border-radius: 12px;
-                max-width: 400px;
-                animation-name: animatetop;
-                animation-duration: 0.4s
-            }
-            @keyframes animatetop {
-                from {top: -300px; opacity: 0}
-                to {top: 0; opacity: 1}
-            }
-            .close-button {
-                color: #aaa;
-                float: right;
-                font-size: 28px;
-                font-weight: bold;
-            }
-            .close-button:hover,
-            .close-button:focus {
-                color: #000;
-                text-decoration: none;
-                cursor: pointer;
             }
         </style>
     </head>
@@ -80,12 +28,8 @@
 
         <div class="max-w-6xl mx-auto">
             <header class="text-center mb-10">
-                <h1 class="text-4xl font-extrabold text-gray-900 mb-2">MUSOC Inventory</h1>
-                <button id="auth-button" class="py-2 px-4 rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition">
-                    <i class="fas fa-sign-in-alt mr-1"></i> Log In
-                </button>
+                <h1 class="text-4xl font-extrabold text-gray-900 mb-2">MUSOC Inventory Manager</h1>
             </header>
-            <p id="auth-status" class="text-center mb-6 text-sm text-gray-600"></p>
 
             <!-- Notification Bar -->
             <div id="notification-area" class="fixed top-4 right-4 z-50 space-y-3">
@@ -96,16 +40,7 @@
                 <!-- 1. Add New Item Form (Sidebar) -->
                 <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-lg h-fit">
                     <h2 class="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">Add New Asset</h2>
-
-                    <div id="login-prompt" class="p-6 bg-indigo-50 border-2 border-indigo-200 rounded-lg text-center space-y-3">
-                        <i class="fas fa-lock text-4xl text-indigo-500"></i>
-                        <p class="font-semibold text-gray-700">Login required to add or edit inventory.</p>
-                        <button onclick="document.getElementById('login-modal').style.display='block'" class="w-full py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">
-                            Login
-                        </button>
-                    </div>
-
-                    <form id="add-item-form" class="space-y-4" hidden>
+                    <form id="add-item-form" class="space-y-4">
 
                         <!-- 1. Primary Asset Type Selector -->
                         <div>
@@ -190,27 +125,6 @@
             </div>
         </div>
 
-        <div id="login-modal" class="modal">
-            <div class="modal-content">
-                <span class="close-button" onclick="document.getElementById('login-modal').style.display='none'">&times;</span>
-                <h3 class="text-2xl font-bold mb-4 text-gray-800">Staff Login</h3>
-                <form id="login-form" class="space-y-4">
-                    <div>
-                        <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
-                        <input type="text" id="username" name="username" required class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
-                    </div>
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                        <input type="password" id="password" name="password" required class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
-                    </div>
-                    <button type="submit" class="w-full py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">
-                        Log In
-                    </button>
-                    <p class="text-xs text-gray-500 mt-2 text-center">Hint: username is "admin", password is "musoc123"</p>
-                </form>
-            </div>
-        </div>
-
         <!-- JavaScript Logic -->
         <script>
             const API_URL = '/api/items';
@@ -218,72 +132,6 @@
             let sortDirection = 1; // 1 for ASC, -1 for DESC
             let sizeRowCounter = 0; // For unique IDs for costume size rows
             let currentView = 'list'; // 'list' or 'grid'
-            let isLoggedIn = false;
-
-            const FIXED_USERNAME = 'assets_manager';
-            const FIXED_PASSWORD = 'MusocAssets123';
-
-            function updateAuthState(loggedIn) {
-                isLoggedIn = loggedIn;
-                const authButton = document.getElementById('auth-button');
-                const authStatus = document.getElementById('auth-status');
-                const addItemForm = document.getElementById('add-item-form');
-                const loginPrompt = document.getElementById('login-prompt');
-
-                if (isLoggedIn) {
-                    authButton.innerHTML = '<i class="fas fa-sign-out-alt mr-1"></i> Log Out';
-                    authButton.className = 'py-2 px-4 rounded-lg shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition';
-                    authStatus.textContent = 'Status: Logged in as Staff';
-                    addItemForm.classList.remove('hidden');
-                    loginPrompt.classList.add('hidden');
-                    showNotification('Successfully logged in!', 'success');
-                } else {
-                    authButton.innerHTML = '<i class="fas fa-sign-in-alt mr-1"></i> Log In';
-                    authButton.className = 'py-2 px-4 rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition';
-                    authStatus.textContent = 'Status: Public View Only';
-                    addItemForm.classList.add('hidden');
-                    loginPrompt.classList.remove('hidden');
-                    // Optionally show notification if logging out
-                    if (loggedIn !== null) { // Only show on explicit change
-                        showNotification('Logged out successfully.', 'info');
-                    }
-                }
-
-                // Re-render inventory to update buttons visibility
-                filterAndSortInventory();
-            }
-
-            document.getElementById('auth-button').addEventListener('click', () => {
-                if (isLoggedIn) {
-                    updateAuthState(false); // Log out
-                } else {
-                    document.getElementById('login-modal').style.display = 'block'; // Open modal
-                }
-            });
-
-            document.getElementById('login-form').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const usernameInput = document.getElementById('username').value;
-                const passwordInput = document.getElementById('password').value;
-
-                if (usernameInput === FIXED_USERNAME && passwordInput === FIXED_PASSWORD) {
-                    document.getElementById('login-modal').style.display = 'none';
-                    updateAuthState(true);
-                    // Clear fields after successful login
-                    document.getElementById('username').value = '';
-                    document.getElementById('password').value = '';
-                } else {
-                    showNotification('Invalid username or password.', 'error');
-                }
-            });
-
-            // Close modal when clicking outside
-            window.onclick = function(event) {
-                const modal = document.getElementById('login-modal');
-                if (event.target === modal) {
-                    modal.style.display = "none";
-                }
-            }
 
             // --- Utility Functions ---
 
@@ -641,12 +489,6 @@
             // 1. Add Item
             document.getElementById('add-item-form').addEventListener('submit', async function(e) {
                 e.preventDefault();
-
-                if (!isLoggedIn) {
-                    showNotification('You must be logged in to add assets.', 'error');
-                    return;
-                }
-
                 const form = e.target;
                 const formData = new FormData(form);
                 const submitButton = document.getElementById('add-item-button');
@@ -706,10 +548,6 @@
 
             // 2. Status Toggle (Check Out/Return)
             async function handleStatusToggle(itemId, currentStatus) {
-                if (!isLoggedIn) {
-                    showNotification('You must be logged in to change asset status.', 'error');
-                    return;
-                }
                 const newStatus = currentStatus === 'Available' ? 'Checked Out' : 'Available';
 
                 try {
@@ -736,11 +574,6 @@
 
             // 3. Delete Item
             async function handleDelete(itemId, itemName) {
-                if (!isLoggedIn) {
-                    showNotification('You must be logged in to delete assets.', 'error');
-                    return;
-                }
-
                 showConfirmationModal(
                 'Confirm Deletion',
                 `Are you absolutely sure you want to permanently delete "${itemName}"? This action cannot be reversed.`,
