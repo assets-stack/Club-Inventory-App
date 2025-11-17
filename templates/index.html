@@ -580,31 +580,28 @@
 
             // 3. Delete Item
             async function handleDelete(itemId, itemName) {
-                showConfirmationModal(
-                'Confirm Deletion',
-                `Are you absolutely sure you want to permanently delete "${itemName}"? This action cannot be reversed.`,
-                async (confirmed) => {
-                    if (!confirmed) return;
+                // FIX: Replaced the undefined showConfirmationModal with the native confirm() dialog.
+                const confirmed = confirm(`Are you absolutely sure you want to permanently delete "${itemName}"? This action cannot be reversed.`);
 
-                    try {
-                        const response = await fetch(`${API_URL}/${itemId}`, {
-                            method: 'DELETE'
-                        });
+                if (!confirmed) return;
 
-                        if (!response.ok) {
-                            const errorData = await response.json().catch(() => ({ error: 'Unknown server error.' }));
-                            throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);
-                        }
+                try {
+                    const response = await fetch(`${API_URL}/${itemId}`, {
+                        method: 'DELETE'
+                    });
 
-                        await fetchInventory();
-                        showNotification(`Successfully deleted asset: ${itemName}.`, 'error');
-
-                    } catch (error) {
-                        console.error('Error deleting item:', error);
-                        showNotification(error.message || 'Failed to delete asset.', 'error');
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ error: 'Unknown server error.' }));
+                        throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);
                     }
+
+                    await fetchInventory();
+                    showNotification(`Successfully deleted asset: ${itemName}.`, 'error');
+
+                } catch (error) {
+                    console.error('Error deleting item:', error);
+                    showNotification(error.message || 'Failed to delete asset.', 'error');
                 }
-            );
             }
             window.handleDelete = handleDelete;
 
