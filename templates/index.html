@@ -16,6 +16,20 @@
             .item-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
             .notification { transition: opacity 0.5s ease-in-out; }
 
+            /* Notification Area - Ensure Z-index is high */
+            #notification-area {
+                position: fixed;
+                top: 1rem;
+                right: 1rem;
+                z-index: 9999; /* Higher z-index for visibility */
+                pointer-events: none; /* Allows clicks to pass through if needed */
+            }
+            .notification { 
+                transition: opacity 0.5s ease-in-out; 
+                pointer-events: auto; /* Re-enable pointer events for the notification itself */
+                margin-bottom: 0.75rem; /* Space between notifications */
+            }
+
             .grid-photo-container {
                 /* Ensures a nice aspect ratio for the photo */
                 aspect-ratio: 4/3;
