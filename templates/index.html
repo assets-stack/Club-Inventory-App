@@ -70,6 +70,14 @@
                         <div class="flex-grow">
                             <input type="text" id="search-input" placeholder="Search by name, type, or location..." class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
                         </div>
+                        <div class="flex space-x-2">
+                            <button id="view-list-button" class="flex-shrink-0 py-2 px-3 border border-indigo-200 rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition">
+                                <i class="fas fa-list-ul"></i> List
+                            </button>
+                            <button id="view-grid-button" class="flex-shrink-0 py-2 px-3 border border-indigo-200 rounded-lg shadow-sm text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition">
+                                <i class="fas fa-th"></i> Grid
+                            </button>
+                        </div>
                         <div>
                             <select id="filter-asset-type" class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border bg-white">
                                 <option value="">All Asset Types</option>
@@ -115,6 +123,7 @@
             let inventoryData = [];
             let sortDirection = 1; // 1 for ASC, -1 for DESC
             let sizeRowCounter = 0; // For unique IDs for costume size rows
+            let currentView = 'list'; // 'list' or 'grid'
 
             // --- Utility Functions ---
 
@@ -207,12 +216,19 @@
                         <div>
                             <label for="type_of_clothing" class="block text-sm font-medium text-gray-700">Type of Clothing</label>
                             <select id="type_of_clothing" name="type_of_clothing" required class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border bg-white">
-                                <option value="Trousers">Trousers</option>
-                                <option value="Shirt">Shirt</option>
+                                <option value="Pants">Pants</option>
+                                <option value="Shorts">Shorts</option>
+                                <option value="Skirt">Skirt</option>
                                 <option value="Dress">Dress</option>
-                                <option value="Hat">Hat</option>
-                                <option value="Jacket">Jacket</option>
-                                <option value="Footwear">Footwear</option>
+                                <option value="Tops">Tops</option>
+                                <option value="T_shirt">T-shirt</option>
+                                <option value="Long_Sleeve_Shirt">Long Sleeve Shirt</option>
+                                <option value="Dress_Shirt">Dress Shirt</option>
+                                <option value="Singlet">Singlet</option>
+                                <option value="Cardigans_&_Jumpers">Cardigans & Jumpers</option>
+                                <option value="Sleepwear_&_Lingerie">Sleepwear & Lingerie</option>
+                                <option value="Jackets_&_Coats">Jackets & Coats</option>
+                                <option value="Robes">Robes</option>
                             </select>
                         </div>
                         <div>
@@ -303,6 +319,12 @@
                 const listContainer = document.getElementById('inventory-list');
                 listContainer.innerHTML = '';
 
+                if (currentView === 'grid') {
+                    listContainer.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6';
+                } else {
+                    listContainer.className = 'space-y-4';
+                }
+
                 if (items.length === 0) {
                     listContainer.innerHTML = '<p class="text-gray-500 p-4">No items found matching your criteria.</p>';
                     return;
@@ -321,9 +343,11 @@
                             ? item.size_inventory.reduce((sum, entry) => sum + parseInt(entry.count || 0), 0)
                             : 0;
 
+                        const sizeDetails = item.size_inventory.map(i => '${i.size} (x${i.count})').join(', ');
+
                         title = `${item.type_of_clothing} (${item.gender})`;
-                        description = `Sizes: ${item.size_inventory.map(i => `${i.size}`).join(', ')}`;
-                        countInfo = `Total Units: ${totalCount}`;
+                        description = `Location: ${item.storage_location}`;
+                        countInfo = `Sizes/Units: ${sizeDetails}`;
 
                     } else if (item.asset_type === 'Prop' || item.asset_type === 'Set') {
                         title = item.name;
@@ -332,7 +356,11 @@
                     }
 
                     const card = document.createElement('div');
-                    card.className = 'item-card bg-white border border-gray-200 rounded-xl shadow-md p-4 flex items-center space-x-4';
+                    if (currentView === 'grid') {
+                        card.className = 'item-card bg-white border border-gray-200 rounded-xl shadow-md p-4 flex flex-col items-center text-center';
+                    } else {
+                        card.className = 'item-card bg-white border border-gray-200 rounded-xl shadow-md p-4 flex items-center space-x-4';
+                    }
                     card.innerHTML = `
                         <!-- Photo/Placeholder -->
                         <div class="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-gray-300">
@@ -343,7 +371,7 @@
                         </div>
 
                         <!-- Item Details -->
-                        <div class="flex-grow">
+                        <div class="${currentView === 'grid' ? 'flex-grow w-full' : 'flex-grow'}">
                             <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-700">${item.asset_type}</span>
                             <h3 class="text-lg font-bold text-gray-900 mt-1">${title}</h3>
                             <p class="text-sm text-gray-500">
@@ -535,6 +563,24 @@
             document.getElementById('search-input').addEventListener('input', filterAndSortInventory);
             document.getElementById('filter-asset-type').addEventListener('change', filterAndSortInventory);
             document.getElementById('filter-status').addEventListener('change', filterAndSortInventory);
+
+            function updateView() {
+                currentView = view;
+                const listButton = document.getElementById('view-list-button');
+                const gridButton = document.getElementById('view-grid-button');
+
+                if (view === 'list') {
+                    listButton.className = 'flex-shrink-0 py-2 px-3 border border-indigo-200 rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition';
+                    gridButton.className = 'flex-shrink-0 py-2 px-3 border border-indigo-200 rounded-lg shadow-sm text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition';
+                } else {
+                    gridButton.className = 'flex-shrink-0 py-2 px-3 border border-indigo-200 rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition';
+                    listButton.className = 'flex-shrink-0 py-2 px-3 border border-indigo-200 rounded-lg shadow-sm text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition';
+                }
+                filterAndSortInventory(); // Re-render the list with the new view
+        }
+
+        document.getElementById('view-list-button').addEventListener('click', () => updateView('list'));
+        document.getElementById('view-grid-button').addEventListener('click', () => updateView('grid'));
 
             // --- Initial Load ---
             fetchInventory();
