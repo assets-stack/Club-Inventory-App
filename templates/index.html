@@ -127,6 +127,63 @@
             </div>
         </div>
 
+        <div id="detail-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden items-center justify-center p-4 z-50 transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all sm:my-8 sm:align-middle sm:p-6" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 id="modal-title" class="text-2xl font-bold text-gray-900">Asset Details</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form id="edit-item-form" class="py-4 space-y-4">
+                <input type="hidden" id="edit-item-id" name="id">
+                <input type="hidden" id="edit-asset-type" name="asset_type">
+
+                <div class="flex items-center space-x-4">
+                    <div id="modal-photo-container" class="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border border-gray-300">
+                        <img id="modal-photo" src="" alt="Asset photo" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/96x96/cccccc/333333?text=No+Photo';">
+                    </div>
+                    <div>
+                        <p id="modal-asset-type" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-700 mb-1"></p>
+                        <h4 id="modal-title-main" class="text-xl font-extrabold text-gray-900"></h4>
+
+                        <label for="edit-storage-location" class="block text-xs font-medium text-gray-700 mt-2">Storage Location</label>
+                        <input type="text" id="edit-storage-location" name="storage_location" class="w-full text-sm rounded-lg border-gray-300 shadow-sm p-1.5 border bg-white read-mode" disabled>
+                    </div>
+                </div>
+
+                <div id="modal-status-badge" class="px-3 py-1 text-sm font-semibold rounded-full w-fit"></div>
+
+                <div id="modal-specific-details" class="space-y-2 text-sm text-gray-700 bg-gray-50 p-4 rounded-lg border">
+                    <p class="text-md font-semibold text-gray-800 border-b pb-1">Detailed Information:</p>
+                    </div>
+
+                <div id="modal-notes-container" class="text-sm text-gray-600 border-t pt-3">
+                    <label for="edit-notes" class="block font-semibold text-gray-800">Notes:</label>
+                    <textarea id="edit-notes" name="notes" rows="3" class="w-full mt-1 p-2 bg-yellow-50 rounded-lg border border-yellow-200 read-mode" disabled></textarea>
+                </div>
+            </form>
+
+            <div class="mt-4 flex justify-between">
+                <div>
+                    <button type="button" id="edit-button" onclick="toggleEditMode(true)" class="py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition">
+                        <i class="fas fa-edit mr-2"></i>Edit Info
+                    </button>
+                </div>
+                <div class="space-x-3">
+                    <button type="submit" form="edit-item-form" id="save-button" class="py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition hidden">
+                        <i class="fas fa-save mr-2"></i>Save Changes
+                    </button>
+                    <button type="button" onclick="closeModal()" class="py-2 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
         <!-- JavaScript Logic -->
         <script>
             const API_URL = '/api/items';
@@ -802,71 +859,14 @@
                     listButton.className = 'flex-shrink-0 py-2 px-3 border border-indigo-200 rounded-lg shadow-sm text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition';
                 }
                 filterAndSortInventory(); // Re-render the list with the new view
-        }
+            }
 
-        document.getElementById('view-list-button').addEventListener('click', () => updateView('list'));
-        document.getElementById('view-grid-button').addEventListener('click', () => updateView('grid'));
+            document.getElementById('view-list-button').addEventListener('click', () => updateView('list'));
+            document.getElementById('view-grid-button').addEventListener('click', () => updateView('grid'));
 
             // --- Initial Load ---
             fetchInventory();
             displayDynamicFields(); // Initialize form state
-    </script>
-
-    <div id="detail-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden items-center justify-center p-4 z-50 transition-opacity duration-300">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all sm:my-8 sm:align-middle sm:p-6" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-
-        <div class="flex justify-between items-center border-b pb-3">
-            <h3 id="modal-title" class="text-2xl font-bold text-gray-900">Asset Details</h3>
-            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
-                <i class="fas fa-times text-xl"></i>
-            </button>
-        </div>
-
-        <form id="edit-item-form" class="py-4 space-y-4">
-            <input type="hidden" id="edit-item-id" name="id">
-            <input type="hidden" id="edit-asset-type" name="asset_type">
-
-            <div class="flex items-center space-x-4">
-                <div id="modal-photo-container" class="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border border-gray-300">
-                    <img id="modal-photo" src="" alt="Asset photo" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/96x96/cccccc/333333?text=No+Photo';">
-                </div>
-                <div>
-                    <p id="modal-asset-type" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-700 mb-1"></p>
-                    <h4 id="modal-title-main" class="text-xl font-extrabold text-gray-900"></h4>
-
-                    <label for="edit-storage-location" class="block text-xs font-medium text-gray-700 mt-2">Storage Location</label>
-                    <input type="text" id="edit-storage-location" name="storage_location" class="w-full text-sm rounded-lg border-gray-300 shadow-sm p-1.5 border bg-white read-mode" disabled>
-                </div>
-            </div>
-
-            <div id="modal-status-badge" class="px-3 py-1 text-sm font-semibold rounded-full w-fit"></div>
-
-            <div id="modal-specific-details" class="space-y-2 text-sm text-gray-700 bg-gray-50 p-4 rounded-lg border">
-                <p class="text-md font-semibold text-gray-800 border-b pb-1">Detailed Information:</p>
-                </div>
-
-            <div id="modal-notes-container" class="text-sm text-gray-600 border-t pt-3">
-                <label for="edit-notes" class="block font-semibold text-gray-800">Notes:</label>
-                <textarea id="edit-notes" name="notes" rows="3" class="w-full mt-1 p-2 bg-yellow-50 rounded-lg border border-yellow-200 read-mode" disabled></textarea>
-            </div>
-        </form>
-
-        <div class="mt-4 flex justify-between">
-            <div>
-                <button type="button" id="edit-button" onclick="toggleEditMode(true)" class="py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition">
-                    <i class="fas fa-edit mr-2"></i>Edit Info
-                </button>
-            </div>
-            <div class="space-x-3">
-                <button type="submit" form="edit-item-form" id="save-button" class="py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition hidden">
-                    <i class="fas fa-save mr-2"></i>Save Changes
-                </button>
-                <button type="button" onclick="closeModal()" class="py-2 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition">
-                    Close
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+        </script>
     </body>
 </html>
