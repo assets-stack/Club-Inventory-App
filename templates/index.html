@@ -844,20 +844,20 @@
                                 </p>
                                 <p class="text-sm text-gray-600 font-medium mt-1 truncate">${countInfo}</p>
 
-                                <div class="flex flex-col items-center justify-between mt-3 w-full">
-                                    <div class="w-full md:w-auto">
-                                        <label for="filter-gender" class="block text-xs font-medium text-gray-700">Gender</label>
-                                        <select id="filter-gender" onchange="filterAndSortInventory()"
-                                                class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border bg-white mt-1 w-full md:w-auto">
-                                            <option value="All">All Genders</option>
-                                            ${Array.from(uniqueGenders).sort().map(gender => `<option value="${gender}">${gender}</option>`).join('')}
-                                        </select>
-                                    </div>
+                                <div class="flex flex-col space-y-1 items-center flex-shrink-0 mb-2 w-full">
+                                    <button onclick="updateStatusHandler(event, '${item.id}', '${item.status}')"
+                                            class="w-full py-1 px-2 text-xs font-medium text-white rounded-lg shadow-sm ${buttonColor} transition ease-in-out duration-150">
+                                        ${buttonText}
+                                    </button>
                                     <div class="text-xs font-medium text-gray-700 w-full text-center">
                                         ${item.status === 'Checked Out' && item.checked_out_to 
-                                            ? `To: <span class="font-bold">${item.checked_out_to}</span>` 
-                                            : `&nbsp;`}
+                                        ? `To: <span class="font-bold">${item.checked_out_to}</span>` 
+                                        : `&nbsp;`}
                                     </div>
+                                    <button onclick="handleDelete('${item.id}', '${title}')"
+                                            class="w-full p-1 text-xs font-medium text-red-700 bg-red-100 rounded-lg shadow-sm hover:bg-red-200 transition ease-in-out duration-150">
+                                        <i class="fas fa-trash-alt mr-1"></i>Delete
+                                    </button>
                                 </div>
                             </div>
                         `;
@@ -893,19 +893,19 @@
                             </span>
 
                             <!-- Actions -->
-                            <div class="flex space-x-2 flex-shrink-0">
+                            <div class="flex flex-col space-y-1 items-end flex-shrink-0 min-w-[80px]">
                                 <button onclick="updateStatusHandler(event, '${item.id}', '${item.status}')"
-                                        class="py-1 px-2 text-xs font-medium text-white rounded-lg shadow-sm ${buttonColor} transition ease-in-out duration-150">
+                                        class="py-1 px-2 text-xs font-medium text-white rounded-lg shadow-sm ${buttonColor} transition ease-in-out duration-150 w-full text-center">
                                     ${buttonText}
                                 </button>
-                                <div class="text-xs mt-1 font-medium text-gray-700">
+                                <div class="text-xs font-medium text-gray-700 max-w-[100px] truncate">
                                     ${item.status === 'Checked Out' && item.checked_out_to 
                                         ? `To: <span class="font-bold">${item.checked_out_to}</span>` 
                                         : `&nbsp;`}
                                 </div>
                                 <button onclick="handleDelete('${item.id}', '${title}')"
-                                        class="p-1 text-xs font-medium text-red-700 bg-red-100 rounded-lg shadow-sm hover:bg-red-200 transition ease-in-out duration-150">
-                                    <i class="fas fa-trash-alt"></i>
+                                        class="p-1 text-xs font-medium text-red-700 bg-red-100 rounded-lg shadow-sm hover:bg-red-200 transition ease-in-out duration-150 w-full text-center">
+                                    <i class="fas fa-trash-alt mr-1"></i>Delete
                                 </button>
                             </div>
                         `;
