@@ -50,6 +50,7 @@
                                 <option value="Costume">Costume</option>
                                 <option value="Prop">Prop</option>
                                 <option value="Set">Set</option>
+                                <option value="Tech">Tech</option>
                             </select>
                         </div>
 
@@ -92,6 +93,7 @@
                                 <option value="Costume">Costume</option>
                                 <option value="Prop">Prop</option>
                                 <option value="Set">Set</option>
+                                <option value="Tech">Tech</option>
                             </select>
                         </div>
                         <div>
@@ -124,12 +126,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- <div id="notification-box"
-            class="fixed bottom-4 right-4 p-4 rounded-lg shadow-xl text-white transition-opacity duration-300 opacity-0 pointer-events-none"
-            style="min-width: 250px; z-index: 1000;">
-            <div id="notification-message" class="font-medium"></div>
-        </div> -->
 
         <!-- JavaScript Logic -->
         <script>
@@ -182,6 +178,7 @@
                     'Costume': 'fa-tshirt',
                     'Prop': 'fa-hat-wizard',
                     'Set': 'fa-couch',
+                    'Tech': 'fa-code-branch'
                 };
                 return icons[assetType] || 'fa-box';
             }
@@ -267,8 +264,8 @@
                             <input type="text" id="storage_location" name="storage_location" required class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
                         </div>
                     `;
-                } else if (assetType === 'Prop' || assetType === 'Set') {
-                    // Prop and Set share Name, Number, and Location
+                } else if (assetType === 'Prop' || assetType === 'Set' || assetType === 'Tech') {
+                    // Prop, Set, and Tech share Name, Number, and Location
                     html = `
                         <div>
                             <label for="name" class="block text-sm font-medium text-gray-700">${assetType} Name</label>

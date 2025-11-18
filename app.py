@@ -36,7 +36,7 @@ try:
         FIREBASE_CONFIG = json.loads(firebase_config_json)
 
     if not firebase_config_json:
-        print("CRITICAL WARNING: No Firebase config found via environment variable OR secret file path. Running in MOCK DATA MODE.")
+        print("CRITICAL WARNING: No Firebase config found via environment variable OR secret file path.")
     else:
         if FIREBASE_CONFIG and 'private_key' in FIREBASE_CONFIG:
             cred = credentials.Certificate(FIREBASE_CONFIG)
@@ -45,14 +45,14 @@ try:
             print("Firebase successfully initialized with service account.")
             print("Firestore client successfully obtained.")
         else:
-            print("WARNING: Firebase config is present but missing the 'private_key'. Running in MOCK DATA MODE.")
+            print("WARNING: Firebase config is present but missing the 'private_key'.")
             initialize_app()
 
 
 except json.JSONDecodeError as e:
-    print(f"CRITICAL ERROR: Failed to decode Firebase credentials JSON: {e}. Running in MOCK DATA MODE.")
+    print(f"CRITICAL ERROR: Failed to decode Firebase credentials JSON: {e}.")
 except Exception as e:
-    print(f"CRITICAL ERROR: Failed to initialize Firebase or get client: {e}. Running in MOCK DATA MODE.")
+    print(f"CRITICAL ERROR: Failed to initialize Firebase or get client: {e}.")
 
 
 # --- Flask App Setup ---
@@ -181,11 +181,7 @@ def inventory_homepage():
 
 @app.route('/api/items', methods=['GET'])
 def get_inventory():
-    """Fetches all items from Firestore or returns mock data if connection fails."""
-    if not db:
-        print("Returning MOCK data.")
-        return jsonify(sorted(MOCK_INVENTORY, key=lambda x: x.get('asset_type', '') + x.get('name', ''))), 200
-
+    """Fetches all items from Firestore"""
     try:
         items_ref = db.collection(FIRESTORE_COLLECTION).stream()
         inventory = []
@@ -201,9 +197,7 @@ def get_inventory():
 
     except Exception as e:
         print(f"Error fetching inventory from Firestore: {e}")
-        print("Falling back to MOCK DATA due to runtime Firestore error.")
-        return jsonify(sorted(MOCK_INVENTORY, key=lambda x: x.get('asset_type', '') + x.get('name', ''))), 200
-
+        return jsonify({"error": "Failed to fetch inventory (Firestore error)."}), 500
 
 @app.route('/api/items', methods=['POST'])
 def add_item():
@@ -211,7 +205,7 @@ def add_item():
     asset_type = request.form.get('asset_type')
     photo_file = request.files.get('photo')
 
-    if asset_type not in ['Costume', 'Prop', 'Set']:
+    if asset_type not in ['Costume', 'Prop', 'Set', 'Tech']:
         return jsonify({"error": "Invalid or missing Asset Type."}), 400
 
     photo_url = None
@@ -255,7 +249,7 @@ def add_item():
             'size_inventory': size_inventory,
         })
 
-    elif asset_type == 'Prop' or asset_type == 'Set':
+    elif asset_type == 'Prop' or asset_type == 'Set' or asset_type == 'Tech':
         name = request.form.get('name')
         number = request.form.get('number')
         storage_location = request.form.get('storage_location')
@@ -268,14 +262,6 @@ def add_item():
             'number': int(number),
             'storage_location': storage_location,
         })
-
-
-    if not db:
-        # MOCK MODE
-        new_item_data['id'] = f"mock-{len(MOCK_INVENTORY) + 1}"
-        MOCK_INVENTORY.append(new_item_data)
-        print(f"MOCK MODE: Added item {asset_type}")
-        return jsonify(new_item_data), 201
 
     try:
         # FIREBASE MODE
@@ -294,21 +280,6 @@ def add_item():
 @app.route('/api/items/<item_id>', methods=['DELETE'])
 def delete_item(item_id):
     """Handles deleting an item by its ID, now including GitHub cleanup."""
-
-    if not db:
-        # MOCK MODE: Find and remove from mock list
-        global MOCK_INVENTORY
-        initial_len = len(MOCK_INVENTORY)
-
-        # Check if the item exists in MOCK_INVENTORY to get its data before deleting
-        item_to_delete = next((item for item in MOCK_INVENTORY if item['id'] == item_id), None)
-
-        MOCK_INVENTORY = [item for item in MOCK_INVENTORY if item['id'] != item_id]
-        if len(MOCK_INVENTORY) < initial_len:
-            print(f"MOCK MODE: Deleted item {item_id}")
-            # In MOCK mode, we don't clean up GitHub, but the flow is complete.
-            return jsonify({"message": f"MOCK DELETED: Item {item_id} deleted successfully."}), 200
-        return jsonify({"error": "MOCK ERROR: Item not found."}), 404
 
     # FIREBASE MODE
     try:
@@ -338,22 +309,12 @@ def delete_item(item_id):
 
 @app.route('/api/items/<item_id>/status', methods=['PUT'])
 def update_item_status(item_id):
-    """Handles updating an item's status, using mock logic if no DB connection."""
+    """Handles updating an item's status"""
     data = request.get_json()
     new_status = data.get('status')
 
     if new_status not in ['Available', 'Checked Out']:
         return jsonify({"error": "Invalid status value."}), 400
-
-    if not db:
-        # MOCK MODE
-        for item in MOCK_INVENTORY:
-            if item['id'] == item_id:
-                item['status'] = new_status
-                print(f"MOCK MODE: Updated status for {item_id} to {new_status}")
-                return jsonify({"message": f"MOCK UPDATED: Status for item {item_id} updated to {new_status}."}), 200
-        return jsonify({"error": "MOCK ERROR: Item not found."}), 404
-
 
     try:
         doc_ref = db.collection(FIRESTORE_COLLECTION).document(item_id)
