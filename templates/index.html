@@ -844,20 +844,19 @@
                                 </p>
                                 <p class="text-sm text-gray-600 font-medium mt-1 truncate">${countInfo}</p>
 
-                                <div class="flex flex-col space-y-1 items-center flex-shrink-0 mb-2 w-full">
-                                    <button onclick="updateStatusHandler(event, '${item.id}', '${item.status}')"
-                                            class="w-full py-1 px-2 text-xs font-medium text-white rounded-lg shadow-sm ${buttonColor} transition ease-in-out duration-150">
-                                        ${buttonText}
-                                    </button>
-                                    <div class="text-xs font-medium text-gray-700 w-full text-center">
-                                        ${item.status === 'Checked Out' && item.checked_out_to 
-                                        ? `To: <span class="font-bold">${item.checked_out_to}</span>` 
-                                        : `&nbsp;`}
+                                <div class="flex flex-col space-y-1 items-center justify-between mt-3 w-full">
+                                    <span class="px-3 py-1 text-xs font-semibold rounded-full ${statusClass} flex-shrink-0 w-full text-center mb-1">${item.status}</span>
+
+                                    <div class="flex space-x-1 justify-center w-full">
+                                        <button onclick="updateStatusHandler(event, '${item.id}', '${item.status}')"
+                                                class="w-1/2 py-1 px-2 text-xs font-medium text-white rounded-lg shadow-sm ${buttonColor} transition ease-in-out duration-150">
+                                            ${buttonText}
+                                        </button>
+                                        <button onclick="handleDelete('${item.id}', '${title}')"
+                                                class="w-1/2 p-1 text-xs font-medium text-red-700 bg-red-100 rounded-lg shadow-sm hover:bg-red-200 transition ease-in-out duration-150">
+                                            <i class="fas fa-trash-alt mr-1"></i>Delete
+                                        </button>
                                     </div>
-                                    <button onclick="handleDelete('${item.id}', '${title}')"
-                                            class="w-full p-1 text-xs font-medium text-red-700 bg-red-100 rounded-lg shadow-sm hover:bg-red-200 transition ease-in-out duration-150">
-                                        <i class="fas fa-trash-alt mr-1"></i>Delete
-                                    </button>
                                 </div>
                             </div>
                         `;
@@ -887,22 +886,21 @@
                                 <p class="text-sm text-gray-600 font-medium mt-1">${countInfo}</p>
                             </div>
 
-                            <!-- Status Tag -->
-                            <span class="px-3 py-1 text-xs font-semibold rounded-full ${statusClass} flex-shrink-0">
-                                ${item.status}
-                            </span>
-
                             <!-- Actions -->
                             <div class="flex flex-col space-y-1 items-end flex-shrink-0 min-w-[80px]">
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full ${statusClass} flex-shrink-0 w-full text-center">${item.status}</span>
+
                                 <button onclick="updateStatusHandler(event, '${item.id}', '${item.status}')"
                                         class="py-1 px-2 text-xs font-medium text-white rounded-lg shadow-sm ${buttonColor} transition ease-in-out duration-150 w-full text-center">
                                     ${buttonText}
                                 </button>
+
                                 <div class="text-xs font-medium text-gray-700 max-w-[100px] truncate">
                                     ${item.status === 'Checked Out' && item.checked_out_to 
                                         ? `To: <span class="font-bold">${item.checked_out_to}</span>` 
                                         : `&nbsp;`}
                                 </div>
+
                                 <button onclick="handleDelete('${item.id}', '${title}')"
                                         class="p-1 text-xs font-medium text-red-700 bg-red-100 rounded-lg shadow-sm hover:bg-red-200 transition ease-in-out duration-150 w-full text-center">
                                     <i class="fas fa-trash-alt mr-1"></i>Delete
