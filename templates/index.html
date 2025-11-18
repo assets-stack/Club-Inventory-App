@@ -75,54 +75,51 @@
                 <!-- Right Column: Inventory List and Filters -->
                 <div class="lg:col-span-2 space-y-6">
                     <!-- Filters and Sort -->
-                    <div class="bg-white p-4 rounded-xl shadow-lg flex flex-wrap gap-4 items-center">
-                        <div>
-                            <label for="filter-asset-type" class="block text-xs font-medium text-gray-700">Asset Type</label>
-                            <select id="filter-asset-type" onchange="displayFilterOptions(); filterAndSortInventory()"
-                                    class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border bg-white mt-1">
-                                <option value="All">All Assets</option>
-                                <option value="Costume">Costume</option>
-                                <option value="Prop">Prop</option>
-                                <option value="Set">Set</option>
-                                <option value="Tech">Tech</option>
-                            </select>
-                        </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                            <div class="inventory-controls flex flex-wrap gap-3 sm:gap-4 items-end w-full md:w-auto mb-4 md:mb-0">
 
-                        <div id="dynamic-filters-container" class="flex space-x-4">
-                        </div>
-
-                        <div>
-                            <label for="sort-by-button" class="block text-xs font-medium text-gray-700">Sort By</label>
-                            <select id="sort-by-button" onchange="filterAndSortInventory()"
-                                    class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border bg-white mt-1">
-                                <option value="name_asc">Name (A-Z)</option>
-                                <option value="name_desc">Name (Z-A)</option>
-                                <option value="quantity_asc">Quantity (Low to High)</option>
-                                <option value="quantity_desc">Quantity (High to Low)</option>
-                            </select>
-                        </div>
-
-                        <!-- View Toggle Buttons -->
-                        <div class="flex space-x-2">
-                            <button id="view-list-button" class="flex-shrink-0 py-2 px-3 border border-indigo-200 rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition">
-                                <i class="fas fa-list-ul"></i> List
-                            </button>
-                            <button id="view-grid-button" class="flex-shrink-0 py-2 px-3 border border-indigo-200 rounded-lg shadow-sm text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition">
-                                <i class="fas fa-th"></i> Grid
-                            </button>
-                        </div>
-
-                        <!-- Export Button -->
-                        <div class="flex justify-between items-center mb-6">
-                            <div class="inventory-controls flex flex-wrap space-x-4 items-center ...">
+                                <div class="w-full sm:w-auto">
+                                    <label for="filter-asset-type" class="block text-xs font-medium text-gray-700">Asset Type</label>
+                                    <select id="filter-asset-type" onchange="displayFilterOptions(); filterAndSortInventory()"
+                                            class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border bg-white mt-1 w-full md:w-auto">
+                                        <option value="All">All Assets</option>
+                                        <option value="Costume">Costume</option>
+                                        <option value="Prop">Prop</option>
+                                        <option value="Set">Set</option>
+                                        <option value="Tech">Tech</option>
+                                    </select>
                                 </div>
 
-                            <div class="flex space-x-2">
+                                <div id="dynamic-filters-container" class="flex flex-wrap gap-3 w-full md:w-auto">
+                                    </div>
+
+                                <div class="w-full sm:w-auto">
+                                    <label for="sort-by-button" class="block text-xs font-medium text-gray-700">Sort By</label>
+                                    <select id="sort-by-button" onchange="filterAndSortInventory()"
+                                            class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border bg-white mt-1 w-full md:w-auto">
+                                        <option value="name_asc">Name (A-Z)</option>
+                                        <option value="name_desc">Name (Z-A)</option>
+                                        <option value="quantity_asc">Quantity (Low to High)</option>
+                                        <option value="quantity_desc">Quantity (High to Low)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="flex space-x-2 w-full md:w-auto justify-start md:justify-end">
                                 <button onclick="exportInventory()"
                                         class="flex-shrink-0 py-2 px-3 border border-green-700 rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition">
                                     <i class="fas fa-file-excel mr-2"></i>Export to CSV
                                 </button>
-                                </div>
+                                <button id="view-list-button" onclick="updateView('list')"
+                                    class="flex-shrink-0 py-2 px-3 border border-indigo-200 rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition">
+                                    <i class="fas fa-list-ul"></i>
+                                </button>
+                                <button id="view-grid-button" onclick="updateView('grid')"
+                                    class="flex-shrink-0 py-2 px-3 border border-indigo-200 rounded-lg shadow-sm text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition">
+                                    <i class="fas fa-th-large"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -540,10 +537,10 @@
 
                     // 1. Costume Type Dropdown
                     html += `
-                        <div>
+                        <div class="w-full md:w-auto">
                             <label for="filter-type" class="block text-xs font-medium text-gray-700">Type</label>
                             <select id="filter-type" onchange="filterAndSortInventory()"
-                                    class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border bg-white mt-1">
+                                    class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border bg-white mt-1 w-full md:w-auto">
                                 <option value="All">All Types</option>
                                 ${Array.from(uniqueCostumeTypes).sort().map(type => `<option value="${type}">${type}</option>`).join('')}
                             </select>
@@ -552,10 +549,10 @@
 
                     // 2. Gender Dropdown
                     html += `
-                        <div>
+                        <div class="w-full md:w-auto">
                             <label for="filter-gender" class="block text-xs font-medium text-gray-700">Gender</label>
                             <select id="filter-gender" onchange="filterAndSortInventory()"
-                                    class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border bg-white mt-1">
+                                    class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border bg-white mt-1 w-full md:w-auto">
                                 <option value="All">All Genders</option>
                                 ${Array.from(uniqueGenders).sort().map(gender => `<option value="${gender}">${gender}</option>`).join('')}
                             </select>
