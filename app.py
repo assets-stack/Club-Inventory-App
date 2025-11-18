@@ -2,6 +2,8 @@ import json
 import os
 import requests
 import base64
+import io
+import csv
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from firebase_admin import credentials, initialize_app, firestore
@@ -400,6 +402,88 @@ def edit_item(item_id):
         print(f"Error updating item in Firestore: {e}")
         return jsonify({"error": "Failed to update item (Firestore error). Please check server logs."}), 500
 
+
+@app.route('/api/export', methods=['GET'])
+def export_inventory():
+    """Fetches all data and generates a multi-sheet-ready CSV file."""
+
+    try:
+        # 1. Fetch all data
+        items_ref = db.collection(FIRESTORE_COLLECTION).stream()
+        all_items = [doc.to_dict() for doc in items_ref]
+
+        # 2. Group items by asset type
+        grouped_items = {}
+        for item in all_items:
+            # Ensure an ID field is included for tracking
+            item['id'] = item.get('id', 'N/A')
+            asset_type = item.get('asset_type', 'Other')
+            if asset_type not in grouped_items:
+                grouped_items[asset_type] = []
+            grouped_items[asset_type].append(item)
+
+        # 3. Define Master Headers (ensures all sheets have consistent columns)
+        master_headers = [
+            'ID', 'Asset Type', 'Status', 'Checked Out To', 'Storage Location', 'Photo URL', 'Notes',
+            'Name', 'Quantity', 'Clothing Type', 'Gender', 'Sizes (Size:Count)'
+        ]
+
+        # 4. Use a buffer to write CSV data (simulating multiple sheets/sections)
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        writer.writerow(["--- INVENTORY EXPORT - MUSOC ---"])
+        writer.writerow(["Generated on: " + datetime.now().strftime('%Y-%m-%d %H:%M:%S')])
+        writer.writerow([])
+
+        # 5. Write data for each asset type
+        for asset_type, items in grouped_items.items():
+
+            # Write a header row to designate the start of the next sheet/tab
+            writer.writerow([f"SHEET_START: {asset_type}"])
+            writer.writerow(master_headers)
+
+            for item in items:
+                row = {h: '' for h in master_headers} # Initialize empty row dict
+
+                # Common Fields
+                row['ID'] = item.get('id')
+                row['Asset Type'] = asset_type
+                row['Status'] = item.get('status')
+                row['Checked Out To'] = item.get('checked_out_to', '') or ''
+                row['Storage Location'] = item.get('storage_location', '')
+                row['Photo URL'] = item.get('photo_url', '')
+                row['Notes'] = item.get('notes', '')
+
+                if asset_type == 'Costume':
+                    row['Clothing Type'] = item.get('type_of_clothing', '')
+                    row['Gender'] = item.get('gender', '')
+                    # Format size inventory into a readable string
+                    sizes = item.get('size_inventory', [])
+                    row['Sizes (Size:Count)'] = '; '.join([f"{s.get('size', '')}:{s.get('count', 0)}" for s in sizes])
+
+                elif asset_type in ['Prop', 'Set', 'Tech']:
+                    row['Name'] = item.get('name', '')
+                    row['Quantity'] = item.get('number', '')
+
+                # Write the row data to the CSV buffer
+                writer.writerow([row[h] for h in master_headers])
+
+            writer.writerow([]) # Blank line for separation
+
+        # 6. Prepare the Flask response
+        response = app.response_class(
+            output.getvalue(),
+            mimetype='text/csv',
+            headers={
+                "Content-Disposition": f"attachment;filename=inventory_export_{datetime.now().strftime('%Y%m%d')}.csv"
+            }
+        )
+        return response
+
+    except Exception as e:
+        print(f"Error during inventory export: {e}")
+        return jsonify({"error": "An unexpected error occurred during file generation."}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=8080)

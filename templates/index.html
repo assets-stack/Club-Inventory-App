@@ -111,6 +111,19 @@
                                 <i class="fas fa-th"></i> Grid
                             </button>
                         </div>
+
+                        <!-- Export Button -->
+                        <div class="flex justify-between items-center mb-6">
+                            <div class="inventory-controls flex flex-wrap space-x-4 items-center ...">
+                                </div>
+
+                            <div class="flex space-x-2">
+                                <button onclick="exportInventory()"
+                                        class="flex-shrink-0 py-2 px-3 border border-green-700 rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition">
+                                    <i class="fas fa-file-excel mr-2"></i>Export to CSV
+                                </button>
+                                </div>
+                        </div>
                     </div>
 
                     <!-- Inventory List -->
@@ -711,6 +724,24 @@
             window.openDetailsById = openDetailsById;
 
             // --- Data Fetching and Rendering ---
+
+            function exportInventory() {
+                const managerKey = localStorage.getItem('managerKey') || '';
+
+                // Create a temporary link element
+                const link = document.createElement('a');
+
+                // The browser will automatically handle the download when navigating to this URL
+                link.href = '/api/export';
+
+                link.download = `inventory_export_${new Date().toISOString().slice(0, 10)}.csv`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                showNotification('Starting inventory export...', 'success');
+            }
+            window.exportInventory = exportInventory;
 
             async function fetchInventory() {
                 const initialLoad = inventoryData.length === 0;
