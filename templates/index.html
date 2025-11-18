@@ -443,6 +443,64 @@
                 return icons[assetType] || 'fa-box';
             }
 
+            async function updateStatusHandler(e, itemId, currentStatus) {
+                if (e && e.stopPropagation) {
+                    e.stopPropagation(); // Prevent triggering other click handlers
+                }
+
+                let newStatus, checkedOutTo = null;
+
+                if (currentStatus === 'Available') {
+                    // PROMPT FOR CHECKOUT LOCATION/NAME
+                    checkedOutTo = prompt("Checking item out. Enter the name or location it is checked out to:");
+
+                    if (!checkedOutTo || checkedOutTo.trim() === "") {
+                        showNotification('Checkout cancelled: Name or location is required.', 'error');
+                        return;
+                    }
+                    newStatus = 'Checked Out';
+                } else {
+                    // CONFIRM RETURN/AVAILABILITY
+                    const confirmReturn = confirm(`Are you sure you want to return this item (ID: ${itemId}) and mark it as 'Available'?`);
+                    if (!confirmReturn) {
+                        return;
+                    }
+                    newStatus = 'Available';
+                }
+
+                const updateData = {
+                    status: newStatus
+                };
+
+                if (checkedOutTo) {
+                    updateData.checked_out_to = checkedOutTo.trim();
+                }
+
+                try {
+                    const response = await fetch(`/api/items/${itemId}/status`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Manager-Key': localStorage.getItem('managerKey')
+                        },
+                        body: JSON.stringify(updateData)
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        showNotification(data.message, 'success');
+                        await fetchInventory(); // Refresh the list
+                    } else {
+                        const errorData = await response.json();
+                        showNotification(errorData.error || `Failed to change status to ${newStatus}.`, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error updating status:', error);
+                    showNotification('An unexpected network error occurred during status update.', 'error');
+                }
+            }
+            window.updateStatusHandler = updateStatusHandler;
+
             // --- Dynamic Form Rendering ---
 
             function addCostumeSizeRow() {
@@ -645,6 +703,7 @@
                     const buttonText = isAvailable ? 'Check Out' : 'Return';
                     const buttonColor = isAvailable ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-green-600 hover:bg-green-700';
 
+
                     let title, description, countInfo;
 
                     if (item.asset_type === 'Costume') {
@@ -694,14 +753,19 @@
                                     </span>
                                     <!-- Actions -->
                                     <div class="flex space-x-2 flex-shrink-0">
-                                        <button onclick="handleStatusToggle('${item.id}', '${item.status}')"
-                                                class="py-1 px-3 text-sm font-medium text-white rounded-lg shadow-sm ${buttonColor} transition ease-in-out duration-150">
+                                        <button onclick="updateStatusHandler(event, '${item.id}', '${item.status}')"
+                                            class="py-1 px-3 text-sm font-medium text-white rounded-lg shadow-sm ${buttonColor} transition ease-in-out duration-150">
                                             ${buttonText}
                                         </button>
                                         <button onclick="handleDelete('${item.id}', '${title}')"
-                                                class="py-1 px-3 text-sm font-medium text-red-700 bg-red-100 rounded-lg shadow-sm hover:bg-red-200 transition ease-in-out duration-150">
+                                            class="py-1 px-3 text-sm font-medium text-red-700 bg-red-100 rounded-lg shadow-sm hover:bg-red-200 transition ease-in-out duration-150">
                                             <i class="fas fa-trash-alt"></i>
                                         </button>
+                                    </div>
+                                    <div class="text-xs mt-1 font-medium text-gray-700 w-full text-center">
+                                        ${item.status === 'Checked Out' && item.checked_out_to
+                                            ? `To: <span class="font-bold">${item.checked_out_to}</span>`
+                                            : `&nbsp;`}
                                     </div>
                                 </div>
                             </div>
@@ -736,10 +800,15 @@
 
                             <!-- Actions -->
                             <div class="flex space-x-2 flex-shrink-0">
-                                <button onclick="handleStatusToggle('${item.id}', '${item.status}')"
+                                <button onclick="updateStatusHandler(event, '${item.id}', '${item.status}')"
                                         class="py-1 px-3 text-sm font-medium text-white rounded-lg shadow-sm ${buttonColor} transition ease-in-out duration-150">
                                     ${buttonText}
                                 </button>
+                                <div class="text-xs mt-1 font-medium text-gray-700">
+                                    ${item.status === 'Checked Out' && item.checked_out_to 
+                                        ? `To: <span class="font-bold">${item.checked_out_to}</span>` 
+                                        : `&nbsp;`}
+                                </div>
                                 <button onclick="handleDelete('${item.id}', '${title}')"
                                         class="py-1 px-3 text-sm font-medium text-red-700 bg-red-100 rounded-lg shadow-sm hover:bg-red-200 transition ease-in-out duration-150">
                                     <i class="fas fa-trash-alt"></i>

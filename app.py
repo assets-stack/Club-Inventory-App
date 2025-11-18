@@ -317,16 +317,26 @@ def update_item_status(item_id):
     """Handles updating an item's status"""
     data = request.get_json()
     new_status = data.get('status')
+    checked_out_to = data.get('checked_out_to', None)
 
     if new_status not in ['Available', 'Checked Out']:
         return jsonify({"error": "Invalid status value."}), 400
+
+    update_fields = {'status': new_status}
+
+    if new_status == 'Checked Out':
+        if not checked_out_to or checked_out_to.strip() == '':
+            return jsonify({"error": "Checked out to location/person is required when checking out an item."}), 400
+        update_fields['checked_out_to'] = checked_out_to.strip()
+    else:
+        update_fields['checked_out_to'] = None
 
     try:
         doc_ref = db.collection(FIRESTORE_COLLECTION).document(item_id)
         if not doc_ref.get().exists:
             return jsonify({"error": "Item not found."}), 404
 
-        doc_ref.update({'status': new_status})
+        doc_ref.update(update_fields)
 
         return jsonify({"message": f"Status for item {item_id} updated to {new_status}."}), 200
 
