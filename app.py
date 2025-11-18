@@ -230,6 +230,8 @@ def add_item():
         sizes = request.form.getlist('size')
         counts = request.form.getlist('count')
 
+        notes = request.form.get('notes')
+
         if not type_of_clothing or not storage_location or not sizes:
             return jsonify({"error": "Missing required fields for Costume asset."}), 400
 
@@ -247,12 +249,14 @@ def add_item():
             'gender': gender,
             'storage_location': storage_location,
             'size_inventory': size_inventory,
+            'notes': notes if notes else None,
         })
 
     elif asset_type == 'Prop' or asset_type == 'Set' or asset_type == 'Tech':
         name = request.form.get('name')
         number = request.form.get('number')
         storage_location = request.form.get('storage_location')
+        notes = request
 
         if not name or not number or not storage_location or not number.isdigit() or int(number) < 1:
             return jsonify({"error": f"Missing required fields or invalid number for {asset_type} asset."}), 400
@@ -261,6 +265,7 @@ def add_item():
             'name': name,
             'number': int(number),
             'storage_location': storage_location,
+            'notes': notes if notes else None,
         })
 
     try:
