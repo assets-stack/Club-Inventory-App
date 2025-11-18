@@ -344,7 +344,7 @@
                         showNotification(data.message, 'success');
 
                         // Re-fetch and re-render the inventory list
-                        await loadInventory();
+                        await fetchInventory();
                         closeModal();
                     } else {
                         const errorData = await response.json();
