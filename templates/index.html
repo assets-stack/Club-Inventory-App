@@ -450,7 +450,7 @@
 
             async function updateStatusHandler(e, itemId, currentStatus) {
                 if (e && e.stopPropagation) {
-                    e.stopPropagation(); // Prevent triggering other click handlers
+                    e.stopPropagation();
                 }
 
                 let newStatus, checkedOutTo = null;
@@ -465,7 +465,7 @@
                     }
                     newStatus = 'Checked Out';
                 } else {
-                    // RETURN
+                    // MODIFIED: No confirmation needed when returning item
                     newStatus = 'Available';
                 }
 
@@ -633,7 +633,7 @@
                                 <option value="Skirt">Skirt</option>
                                 <option value="Dress">Dress</option>
                                 <option value="Tops">Tops</option>
-                                <option value="T_shirt">T-shirt</option>
+                                <option value="T-shirt">T-shirt</option>
                                 <option value="Long_Sleeve_Shirt">Long Sleeve Shirt</option>
                                 <option value="Dress_Shirt">Dress Shirt</option>
                                 <option value="Singlet">Singlet</option>
@@ -807,24 +807,20 @@
                                 </p>
                                 <p class="text-sm text-gray-600 font-medium mt-1 truncate">${countInfo}</p>
 
-                                <div class="flex items-center justify-between mt-3">
-                                    <span class="px-3 py-1 text-xs font-semibold rounded-full ${statusClass} flex-shrink-0">
-                                        ${item.status}
-                                    </span>
-                                    <!-- Actions -->
-                                    <div class="flex space-x-2 flex-shrink-0">
+                                <div class="flex flex-col items-center justify-between mt-3 w-full">
+                                    <div class="flex space-x-2 flex-shrink-0 mb-2">
                                         <button onclick="updateStatusHandler(event, '${item.id}', '${item.status}')"
-                                            class="py-1 px-3 text-sm font-medium text-white rounded-lg shadow-sm ${buttonColor} transition ease-in-out duration-150">
+                                                class="py-1 px-3 text-sm font-medium text-white rounded-lg shadow-sm ${buttonColor} transition ease-in-out duration-150">
                                             ${buttonText}
                                         </button>
                                         <button onclick="handleDelete('${item.id}', '${title}')"
-                                            class="py-1 px-3 text-sm font-medium text-red-700 bg-red-100 rounded-lg shadow-sm hover:bg-red-200 transition ease-in-out duration-150">
+                                                class="py-1 px-3 text-sm font-medium text-red-700 bg-red-100 rounded-lg shadow-sm hover:bg-red-200 transition ease-in-out duration-150">
                                             <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </div>
-                                    <div class="text-xs mt-1 font-medium text-gray-700 w-full text-center">
-                                        ${item.status === 'Checked Out' && item.checked_out_to
-                                            ? `To: <span class="font-bold">${item.checked_out_to}</span>`
+                                    <div class="text-xs font-medium text-gray-700 w-full text-center">
+                                        ${item.status === 'Checked Out' && item.checked_out_to 
+                                            ? `To: <span class="font-bold">${item.checked_out_to}</span>` 
                                             : `&nbsp;`}
                                     </div>
                                 </div>
