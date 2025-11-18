@@ -76,9 +76,33 @@
                 <div class="lg:col-span-2 space-y-6">
                     <!-- Filters and Sort -->
                     <div class="bg-white p-4 rounded-xl shadow-lg flex flex-wrap gap-4 items-center">
-                        <div class="flex-grow">
-                            <input type="text" id="search-input" placeholder="Search by name, type, or location..." class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+                        <div>
+                            <label for="filter-asset-type" class="block text-xs font-medium text-gray-700">Asset Type</label>
+                            <select id="filter-asset-type" onchange="displayFilterOptions(); filterAndSortInventory()"
+                                    class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border bg-white mt-1">
+                                <option value="All">All Assets</option>
+                                <option value="Costume">Costume</option>
+                                <option value="Prop">Prop</option>
+                                <option value="Set">Set</option>
+                                <option value="Tech">Tech</option>
+                            </select>
                         </div>
+
+                        <div id="dynamic-filters-container" class="flex space-x-4">
+                        </div>
+
+                        <div>
+                            <label for="sort-by" class="block text-xs font-medium text-gray-700">Sort By</label>
+                            <select id="sort-by" onchange="filterAndSortInventory()"
+                                    class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border bg-white mt-1">
+                                <option value="name_asc">Name (A-Z)</option>
+                                <option value="name_desc">Name (Z-A)</option>
+                                <option value="quantity_asc">Quantity (Low to High)</option>
+                                <option value="quantity_desc">Quantity (High to Low)</option>
+                            </select>
+                        </div>
+
+                        <!-- View Toggle Buttons -->
                         <div class="flex space-x-2">
                             <button id="view-list-button" class="flex-shrink-0 py-2 px-3 border border-indigo-200 rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition">
                                 <i class="fas fa-list-ul"></i> List
@@ -87,25 +111,6 @@
                                 <i class="fas fa-th"></i> Grid
                             </button>
                         </div>
-                        <div>
-                            <select id="filter-asset-type" class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border bg-white">
-                                <option value="">All Asset Types</option>
-                                <option value="Costume">Costume</option>
-                                <option value="Prop">Prop</option>
-                                <option value="Set">Set</option>
-                                <option value="Tech">Tech</option>
-                            </select>
-                        </div>
-                        <div>
-                            <select id="filter-status" class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border bg-white">
-                                <option value="">All Statuses</option>
-                                <option value="Available">Available</option>
-                                <option value="Checked Out">Checked Out</option>
-                            </select>
-                        </div>
-                        <button id="sort-name-button" class="flex-shrink-0 py-2 px-3 border border-indigo-200 rounded-lg shadow-sm text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition">
-                            Sort Name <i class="fas fa-sort-alpha-down ml-1"></i>
-                        </button>
                     </div>
 
                     <!-- Inventory List -->
@@ -128,61 +133,61 @@
         </div>
 
         <div id="detail-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden items-center justify-center p-4 z-50 transition-opacity duration-300">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all sm:my-8 sm:align-middle sm:p-6" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all sm:my-8 sm:align-middle sm:p-6" role="dialog" aria-modal="true" aria-labelledby="modal-title">
 
-            <div class="flex justify-between items-center border-b pb-3">
-                <h3 id="modal-title" class="text-2xl font-bold text-gray-900">Asset Details</h3>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-            </div>
+                <div class="flex justify-between items-center border-b pb-3">
+                    <h3 id="modal-title" class="text-2xl font-bold text-gray-900">Asset Details</h3>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
 
-            <form id="edit-item-form" class="py-4 space-y-4">
-                <input type="hidden" id="edit-item-id" name="id">
-                <input type="hidden" id="edit-asset-type" name="asset_type">
+                <form id="edit-item-form" class="py-4 space-y-4">
+                    <input type="hidden" id="edit-item-id" name="id">
+                    <input type="hidden" id="edit-asset-type" name="asset_type">
 
-                <div class="flex items-center space-x-4">
-                    <div id="modal-photo-container" class="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border border-gray-300">
-                        <img id="modal-photo" src="" alt="Asset photo" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/96x96/cccccc/333333?text=No+Photo';">
+                    <div class="flex items-center space-x-4">
+                        <div id="modal-photo-container" class="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border border-gray-300">
+                            <img id="modal-photo" src="" alt="Asset photo" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/96x96/cccccc/333333?text=No+Photo';">
+                        </div>
+                        <div>
+                            <p id="modal-asset-type" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-700 mb-1"></p>
+                            <h4 id="modal-title-main" class="text-xl font-extrabold text-gray-900"></h4>
+
+                            <label for="edit-storage-location" class="block text-xs font-medium text-gray-700 mt-2">Storage Location</label>
+                            <input type="text" id="edit-storage-location" name="storage_location" class="w-full text-sm rounded-lg border-gray-300 shadow-sm p-1.5 border bg-white read-mode" disabled>
+                        </div>
                     </div>
+
+                    <div id="modal-status-badge" class="px-3 py-1 text-sm font-semibold rounded-full w-fit"></div>
+
+                    <div id="modal-specific-details" class="space-y-2 text-sm text-gray-700 bg-gray-50 p-4 rounded-lg border">
+                        <p class="text-md font-semibold text-gray-800 border-b pb-1">Detailed Information:</p>
+                        </div>
+
+                    <div id="modal-notes-container" class="text-sm text-gray-600 border-t pt-3">
+                        <label for="edit-notes" class="block font-semibold text-gray-800">Notes:</label>
+                        <textarea id="edit-notes" name="notes" rows="3" class="w-full mt-1 p-2 bg-yellow-50 rounded-lg border border-yellow-200 read-mode" disabled></textarea>
+                    </div>
+                </form>
+
+                <div class="mt-4 flex justify-between">
                     <div>
-                        <p id="modal-asset-type" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-700 mb-1"></p>
-                        <h4 id="modal-title-main" class="text-xl font-extrabold text-gray-900"></h4>
-
-                        <label for="edit-storage-location" class="block text-xs font-medium text-gray-700 mt-2">Storage Location</label>
-                        <input type="text" id="edit-storage-location" name="storage_location" class="w-full text-sm rounded-lg border-gray-300 shadow-sm p-1.5 border bg-white read-mode" disabled>
+                        <button type="button" id="edit-button" onclick="toggleEditMode(true)" class="py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition">
+                            <i class="fas fa-edit mr-2"></i>Edit Info
+                        </button>
                     </div>
-                </div>
-
-                <div id="modal-status-badge" class="px-3 py-1 text-sm font-semibold rounded-full w-fit"></div>
-
-                <div id="modal-specific-details" class="space-y-2 text-sm text-gray-700 bg-gray-50 p-4 rounded-lg border">
-                    <p class="text-md font-semibold text-gray-800 border-b pb-1">Detailed Information:</p>
+                    <div class="space-x-3">
+                        <button type="submit" form="edit-item-form" id="save-button" class="py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition hidden">
+                            <i class="fas fa-save mr-2"></i>Save Changes
+                        </button>
+                        <button type="button" onclick="closeModal()" class="py-2 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition">
+                            Close
+                        </button>
                     </div>
-
-                <div id="modal-notes-container" class="text-sm text-gray-600 border-t pt-3">
-                    <label for="edit-notes" class="block font-semibold text-gray-800">Notes:</label>
-                    <textarea id="edit-notes" name="notes" rows="3" class="w-full mt-1 p-2 bg-yellow-50 rounded-lg border border-yellow-200 read-mode" disabled></textarea>
-                </div>
-            </form>
-
-            <div class="mt-4 flex justify-between">
-                <div>
-                    <button type="button" id="edit-button" onclick="toggleEditMode(true)" class="py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition">
-                        <i class="fas fa-edit mr-2"></i>Edit Info
-                    </button>
-                </div>
-                <div class="space-x-3">
-                    <button type="submit" form="edit-item-form" id="save-button" class="py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition hidden">
-                        <i class="fas fa-save mr-2"></i>Save Changes
-                    </button>
-                    <button type="button" onclick="closeModal()" class="py-2 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition">
-                        Close
-                    </button>
                 </div>
             </div>
         </div>
-    </div>
 
         <!-- JavaScript Logic -->
         <script>
@@ -460,11 +465,7 @@
                     }
                     newStatus = 'Checked Out';
                 } else {
-                    // CONFIRM RETURN/AVAILABILITY
-                    const confirmReturn = confirm(`Are you sure you want to return this item (ID: ${itemId}) and mark it as 'Available'?`);
-                    if (!confirmReturn) {
-                        return;
-                    }
+                    // RETURN
                     newStatus = 'Available';
                 }
 
@@ -825,6 +826,8 @@
                     listContainer.appendChild(card);
                 });
             }
+
+            
 
             function filterAndSortInventory() {
                 const searchTerm = document.getElementById('search-input').value.toLowerCase();
