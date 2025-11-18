@@ -724,7 +724,7 @@
                     }
 
                     const card = document.createElement('div');
-                    card.onclick = () => showItemDetails(item);
+                    // card.onclick = () => showItemDetails(item);
                     if (currentView === 'grid') {
                         card.className = 'item-card bg-white border border-gray-200 rounded-xl shadow-md flex flex-col items-center text-center overflow-hidden cursor-pointer';
 
@@ -740,6 +740,9 @@
 
                             <!-- Details below photo -->
                             <div class="p-4 w-full">
+                                <button onclick="showItemDetails(item)" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium absolute top-2 right-2 p-1 bg-white bg-opacity-80 rounded-full shadow-md z-10 transition">
+                                    <i class="fas fa-info-circle"></i> Details
+                                </button>
                                 <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-700">${item.asset_type}</span>
                                 <h3 class="text-lg font-bold text-gray-900 mt-1 truncate">${title}</h3>
                                 <p class="text-sm text-gray-500 truncate">
@@ -785,6 +788,9 @@
 
                             <!-- Item Details -->
                             <div class="flex-grow">
+                                <button onclick="showItemDetails(item)" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition self-start">
+                                    <i class="fas fa-info-circle mr-1"></i> View Details
+                                </button>
                                 <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-700">${item.asset_type}</span>
                                 <h3 class="text-lg font-bold text-gray-900 mt-1">${title}</h3>
                                 <p class="text-sm text-gray-500">
@@ -945,7 +951,7 @@
 
             // 3. Delete Item
             async function handleDelete(itemId, itemName) {
-                // FIX: Replaced the undefined showConfirmationModal with the native confirm() dialog.
+                // Replaced the undefined showConfirmationModal with the native confirm() dialog.
                 const confirmed = confirm(`Are you absolutely sure you want to permanently delete "${itemName}"? This action cannot be reversed.`);
 
                 if (!confirmed) return;
