@@ -335,5 +335,61 @@ def update_item_status(item_id):
         return jsonify({"error": "Failed to update item status (Firestore error)."}), 500
 
 
+@app.route('/api/items/<item_id>', methods=['PUT'])
+def edit_item(item_id):
+    """Handles updating item fields (notes, storage, quantity, sizes)."""
+
+    # We expect JSON data from the frontend form submission
+    update_data = request.get_json()
+    asset_type = update_data.pop('asset_type', None) # Get type, remove from update data
+
+    if not asset_type:
+        return jsonify({"error": "Asset Type is required for update."}), 400
+
+    # Clean up and validate fields before saving
+    final_update = {}
+
+    if asset_type == 'Costume':
+        # Must parse size_inventory back into a list
+        size_inventory_json = update_data.get('size_inventory')
+        if size_inventory_json:
+            try:
+                final_update['size_inventory'] = json.loads(size_inventory_json)
+            except json.JSONDecodeError:
+                return jsonify({"error": "Invalid format for size inventory."}), 400
+
+    elif asset_type in ['Prop', 'Set', 'Tech']:
+        # Ensure number (quantity) is an integer if provided
+        if 'number' in update_data:
+            try:
+                final_update['number'] = int(update_data['number'])
+                if final_update['number'] < 1:
+                    return jsonify({"error": "Quantity (number) must be 1 or greater."}), 400
+            except ValueError:
+                return jsonify({"error": "Quantity (number) must be an integer."}), 400
+
+    # Update common fields if present
+    if 'storage_location' in update_data:
+        final_update['storage_location'] = update_data['storage_location']
+    if 'notes' in update_data:
+        final_update['notes'] = update_data['notes']
+
+    if not final_update:
+        return jsonify({"error": "No valid fields provided for update."}), 400
+
+    try:
+        doc_ref = db.collection(FIRESTORE_COLLECTION).document(item_id)
+        if not doc_ref.get().exists:
+            return jsonify({"error": "Item not found."}), 404
+
+        doc_ref.update(final_update)
+
+        return jsonify({"message": f"{asset_type} item {item_id} updated successfully."}), 200
+
+    except Exception as e:
+        print(f"Error updating item in Firestore: {e}")
+        return jsonify({"error": "Failed to update item (Firestore error). Please check server logs."}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=8080)
