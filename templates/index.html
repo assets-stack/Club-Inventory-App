@@ -92,8 +92,8 @@
                         </div>
 
                         <div>
-                            <label for="sort-by" class="block text-xs font-medium text-gray-700">Sort By</label>
-                            <select id="sort-by" onchange="filterAndSortInventory()"
+                            <label for="sort-by-button" class="block text-xs font-medium text-gray-700">Sort By</label>
+                            <select id="sort-by-button" onchange="filterAndSortInventory()"
                                     class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border bg-white mt-1">
                                 <option value="name_asc">Name (A-Z)</option>
                                 <option value="name_desc">Name (Z-A)</option>
@@ -885,7 +885,7 @@
 
             function filterAndSortInventory() {
                 const assetTypeFilter = document.getElementById('filter-asset-type').value;
-                const sortBy = document.getElementById('sort-by').value;
+                const sortBy = document.getElementById('sort-by-button').value;
 
                 let filteredItems = inventoryData.filter(item => {
                     // 1. Filter by Asset Type (Always required)
@@ -1061,9 +1061,9 @@
             window.handleDelete = handleDelete;
 
             // 4. Sort Button
-            document.getElementById('sort-name-button').addEventListener('click', () => {
+            document.getElementById('sort-by-button').addEventListener('click', () => {
                 sortDirection *= -1; // Toggle direction
-                const icon = document.querySelector('#sort-name-button i');
+                const icon = document.querySelector('#sort-by-button i');
                 icon.className = sortDirection === 1 ? 'fas fa-sort-alpha-down ml-1' : 'fas fa-sort-alpha-up-alt ml-1';
 
                 filterAndSortInventory();
