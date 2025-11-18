@@ -502,6 +502,58 @@
             }
             window.updateStatusHandler = updateStatusHandler;
 
+            let uniqueCostumeTypes = new Set();
+            let uniqueGenders = new Set();
+
+            // Function to collect unique filter options (call this in fetchInventory)
+            function collectFilterOptions() {
+                uniqueCostumeTypes.clear();
+                uniqueGenders.clear();
+
+                inventoryData.filter(item => item.asset_type === 'Costume').forEach(item => {
+                    if (item.type_of_clothing) uniqueCostumeTypes.add(item.type_of_clothing);
+                    if (item.gender) uniqueGenders.add(item.gender);
+                });
+            }
+
+            // Function to dynamically show/hide filter dropdowns based on asset type
+            function displayFilterOptions() {
+                const assetType = document.getElementById('filter-asset-type').value;
+                const container = document.getElementById('dynamic-filters-container');
+                container.innerHTML = '';
+
+                if (assetType === 'Costume') {
+                    let html = '';
+
+                    // 1. Costume Type Dropdown
+                    html += `
+                        <div>
+                            <label for="filter-type" class="block text-xs font-medium text-gray-700">Type</label>
+                            <select id="filter-type" onchange="filterAndSortInventory()"
+                                    class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border bg-white mt-1">
+                                <option value="All">All Types</option>
+                                ${Array.from(uniqueCostumeTypes).sort().map(type => `<option value="${type}">${type}</option>`).join('')}
+                            </select>
+                        </div>
+                    `;
+
+                    // 2. Gender Dropdown
+                    html += `
+                        <div>
+                            <label for="filter-gender" class="block text-xs font-medium text-gray-700">Gender</label>
+                            <select id="filter-gender" onchange="filterAndSortInventory()"
+                                    class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border bg-white mt-1">
+                                <option value="All">All Genders</option>
+                                ${Array.from(uniqueGenders).sort().map(gender => `<option value="${gender}">${gender}</option>`).join('')}
+                            </select>
+                        </div>
+                    `;
+
+                    container.innerHTML = html;
+                }
+            }
+            window.displayFilterOptions = displayFilterOptions;
+
             // --- Dynamic Form Rendering ---
 
             function addCostumeSizeRow() {
@@ -664,8 +716,12 @@
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
 
-                    const data = await response.json(); 
-                    inventoryData = data; 
+                    const data = await response.json();
+                    inventoryData = data;
+
+                    collectFilterOptions();
+                    displayFilterOptions();
+
                     filterAndSortInventory(); // Use the consolidated filter/sort function
                 } catch (error) {
                     console.error('Failed to fetch inventory:', error);
@@ -827,38 +883,63 @@
                 });
             }
 
-            
-
             function filterAndSortInventory() {
-                const searchTerm = document.getElementById('search-input').value.toLowerCase();
                 const assetTypeFilter = document.getElementById('filter-asset-type').value;
-                const statusFilter = document.getElementById('filter-status').value;
+                const sortBy = document.getElementById('sort-by').value;
 
                 let filteredItems = inventoryData.filter(item => {
-                    // Determine the primary searchable name/identifier
-                    const primaryIdentifier = item.asset_type === 'Costume'
-                        ? `${item.type_of_clothing} ${item.gender}`
-                        : item.name;
+                    // 1. Filter by Asset Type (Always required)
+                    if (assetTypeFilter !== 'All' && item.asset_type !== assetTypeFilter) {
+                        return false;
+                    }
 
-                    const nameMatch = primaryIdentifier.toLowerCase().includes(searchTerm) || item.storage_location.toLowerCase().includes(searchTerm);
+                    // 2. Dynamic Filters for Costume
+                    if (assetTypeFilter === 'Costume') {
+                        const costumeTypeFilter = document.getElementById('filter-type')?.value || 'All';
+                        const genderFilter = document.getElementById('filter-gender')?.value || 'All';
 
-                    const typeMatch = !assetTypeFilter || item.asset_type === assetTypeFilter;
-                    const statusMatch = !statusFilter || item.status === statusFilter;
+                        if (costumeTypeFilter !== 'All' && item.type_of_clothing !== costumeTypeFilter) {
+                            return false;
+                        }
+                        if (genderFilter !== 'All' && item.gender !== genderFilter) {
+                            return false;
+                        }
+                    }
 
-                    return nameMatch && typeMatch && statusMatch;
+                    // All other asset types (Prop, Set, Tech) automatically pass if the main filter passes
+                    return true;
                 });
 
-                // Apply sorting by primary identifier (name or clothing type)
+                // --- Sorting ---
                 filteredItems.sort((a, b) => {
-                    const nameA = a.asset_type === 'Costume' ? a.type_of_clothing : a.name;
-                    const nameB = b.asset_type === 'Costume' ? b.type_of_clothing : b.name;
+                    const primaryIdentifierA = a.asset_type === 'Costume' 
+                        ? `${a.type_of_clothing} ${a.gender}` 
+                        : a.name || a.asset_type;
+                    const primaryIdentifierB = b.asset_type === 'Costume' 
+                        ? `${b.type_of_clothing} ${b.gender}` 
+                        : b.name || b.asset_type;
 
-                    const valA = (nameA || '').toUpperCase();
-                    const valB = (nameB || '').toUpperCase();
+                    // Sorting by Name (A-Z or Z-A)
+                    if (sortBy.startsWith('name')) {
+                        const comparison = primaryIdentifierA.localeCompare(primaryIdentifierB);
+                        return sortBy === 'name_asc' ? comparison : -comparison;
+                    }
 
-                    if (valA < valB) return -1 * sortDirection;
-                    if (valA > valB) return 1 * sortDirection;
-                    return 0;
+                    // Sorting by Quantity (For Prop, Set, Tech)
+                    if (sortBy.startsWith('quantity')) {
+                        const quantityA = a.asset_type === 'Costume' 
+                            ? a.size_inventory.reduce((sum, entry) => sum + parseInt(entry.count || 0), 0)
+                            : (a.number || 0);
+                        const quantityB = b.asset_type === 'Costume' 
+                            ? b.size_inventory.reduce((sum, entry) => sum + parseInt(entry.count || 0), 0)
+                            : (b.number || 0);
+
+                        const comparison = quantityA - quantityB;
+                        return sortBy === 'quantity_asc' ? comparison : -comparison;
+                    }
+
+                    // Default: Sort by Name ASC
+                    return primaryIdentifierA.localeCompare(primaryIdentifierB);
                 });
 
                 renderInventoryList(filteredItems);
