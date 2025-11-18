@@ -232,20 +232,30 @@
                 if (item.asset_type === 'Costume') {
                     titleElement.textContent = `${item.type_of_clothing} (${item.gender})`;
 
-                    // Render size inventory for Costumes (with editable inputs)
+                    // Render size inventory for Costumes (with editable inputs and dynamic buttons)
                     detailsHtml = `
                         <p><span class="font-medium">Clothing Type:</span> ${item.type_of_clothing}</p>
                         <p><span class="font-medium">Gender:</span> ${item.gender}</p>
-                        <div id="edit-size-inventory" class="mt-3 space-y-2">
+                        <div class="mt-3 space-y-2">
                             <p class="font-medium border-b pb-1">Size Inventory (Size | Quantity):</p>
+                            <div id="edit-size-inventory-fields">
                             ${item.size_inventory.map((i, index) => `
-                                <div class="flex space-x-2 items-center">
+                                <div class="flex space-x-2 items-center" id="edit-size-row-${item.id}-${index}">
                                     <input type="text" value="${i.size}" name="size" class="w-1/3 p-1.5 text-xs rounded-lg border-gray-300 border bg-white read-mode" disabled>
                                     <i class="fas fa-times text-gray-400"></i>
                                     <input type="number" value="${i.count}" name="count" min="0" class="w-1/3 p-1.5 text-xs rounded-lg border-gray-300 border bg-white read-mode" disabled>
+                                    <button type="button" onclick="removeEditCostumeSizeRow('edit-size-row-${item.id}-${index}')" 
+                                            class="text-red-500 hover:text-red-700 p-1 text-base h-8 w-8 rounded-full remove-size-button read-mode" disabled style="display: none;">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
                                 </div>
                             `).join('')}
+                            </div>
                         </div>
+                        <button type="button" id="add-edit-size-button" onclick="addEditCostumeSizeRow()" 
+                                class="mt-2 text-indigo-600 hover:text-indigo-800 text-sm font-medium read-mode" disabled style="display: none;">
+                            <i class="fas fa-plus-circle mr-1"></i> Add New Size/Number
+                        </button>
                     `;
                 } else if (item.asset_type === 'Prop' || item.asset_type === 'Set' || item.asset_type === 'Tech') {
                     titleElement.textContent = item.name;
@@ -269,6 +279,9 @@
                 const saveButton = document.getElementById('save-button');
                 const editableFields = document.querySelectorAll('.read-mode');
 
+                const addSizeButton = document.getElementById('add-edit-size-button');
+                const removeRowButtons = document.querySelectorAll('.remove-size-button');
+
                 if (isEditing) {
                     editButton.classList.add('hidden');
                     saveButton.classList.remove('hidden');
@@ -277,6 +290,19 @@
                         field.classList.remove('bg-white');
                         field.classList.add('bg-indigo-50');
                     });
+
+                    // Show the main Add Size button
+                    if (addSizeButton) {
+                        addSizeButton.style.display = 'inline-block';
+                        addSizeButton.removeAttribute('disabled');
+                    }
+
+                    // Show individual size row delete buttons
+                    removeRowButtons.forEach(btn => {
+                        btn.style.display = 'inline-block';
+                        btn.removeAttribute('disabled');
+                    });
+
                 } else {
                     editButton.classList.remove('hidden');
                     saveButton.classList.add('hidden');
@@ -285,6 +311,19 @@
                         field.classList.remove('bg-indigo-50');
                         field.classList.add('bg-white');
                     });
+
+                    // Hide the main Add Size button
+                    if (addSizeButton) {
+                        addSizeButton.style.display = 'none';
+                    }
+
+                    // Hide individual size row delete buttons
+                    removeRowButtons.forEach(btn => {
+                        btn.style.display = 'none';
+                    });
+
+                    // If new rows were added but not saved, remove them upon exiting edit mode
+                    document.querySelectorAll('.added-row').forEach(row => row.remove());
                 }
             }
 
@@ -434,6 +473,36 @@
 
             window.addCostumeSizeRow = addCostumeSizeRow;
             window.removeCostumeSizeRow = removeCostumeSizeRow;
+
+            function addEditCostumeSizeRow() {
+                sizeRowCounter++;
+                const container = document.getElementById('edit-size-inventory-fields');
+                if (!container) return; 
+
+                const row = document.createElement('div');
+                // Ensure new rows also have the 'added-row' class for cleanup on cancel
+                row.className = 'flex space-x-2 items-center mt-2 added-row'; 
+                row.id = `edit-new-size-row-${sizeRowCounter}`;
+                row.innerHTML = `
+                    <input type="text" value="" name="size" required placeholder="Size (e.g., S, 32)" class="w-1/3 p-1.5 text-xs rounded-lg border-gray-300 border bg-indigo-50 read-mode">
+                    <i class="fas fa-times text-gray-400"></i>
+                    <input type="number" value="1" name="count" required min="1" class="w-1/3 p-1.5 text-xs rounded-lg border-gray-300 border bg-indigo-50 read-mode">
+                    <button type="button" onclick="removeEditCostumeSizeRow('edit-new-size-row-${sizeRowCounter}')" 
+                            class="text-red-500 hover:text-red-700 p-1 text-base h-8 w-8 rounded-full remove-size-button read-mode" style="display: inline-block;">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                `;
+                // These inputs are created in edit mode, so they are not disabled.
+                container.appendChild(row);
+            }
+
+            function removeEditCostumeSizeRow(rowId) {
+                document.getElementById(rowId).remove();
+            }
+
+            window.addEditCostumeSizeRow = addEditCostumeSizeRow;
+            window.removeEditCostumeSizeRow = removeEditCostumeSizeRow;
+
 
             function displayDynamicFields() {
                 const assetType = document.getElementById('asset_type').value;
