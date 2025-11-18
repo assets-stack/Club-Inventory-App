@@ -205,7 +205,7 @@
             let inventoryData = [];
             let sortDirection = 1; // 1 for ASC, -1 for DESC
             let sizeRowCounter = 0; // For unique IDs for costume size rows
-            let currentView = 'list'; // 'list' or 'grid'
+            let currentView; // 'list' or 'grid'
 
             let currentItemData = null;
 
@@ -1107,6 +1107,29 @@
             // 5. Filters/Search Input
             document.getElementById('filter-asset-type').addEventListener('change', filterAndSortInventory);
 
+            function loadInitialView() {
+                // Check if a view preference is saved in local storage
+                let savedView = localStorage.getItem('inventoryView');
+
+                // Determine default view based on screen width (Tailwind CSS 'md' breakpoint = 768px)
+                const isMobile = window.innerWidth < 768;
+
+                if (isMobile) {
+                    // On mobile, default to 'grid' unless 'list' was explicitly saved
+                    if (!savedView || savedView === 'grid') {
+                        savedView = 'grid';
+                    }
+                } else {
+                    // On desktop, default to 'list' unless 'grid' was explicitly saved
+                    if (!savedView || savedView === 'list') {
+                        savedView = 'list';
+                    }
+                }
+
+                // Call the existing function to set the view, update buttons, and render
+                updateView(savedView);
+            }
+
             function updateView(view) {
                 currentView = view;
                 const listButton = document.getElementById('view-list-button');
@@ -1127,6 +1150,7 @@
 
             // --- Initial Load ---
             fetchInventory();
+            loadInitialView();
             displayDynamicFields(); // Initialize form state
         </script>
     </body>
