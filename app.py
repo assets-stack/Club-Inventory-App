@@ -256,7 +256,7 @@ def add_item():
         name = request.form.get('name')
         number = request.form.get('number')
         storage_location = request.form.get('storage_location')
-        notes = request
+        notes = request.form.get('notes')
 
         if not name or not number or not storage_location or not number.isdigit() or int(number) < 1:
             return jsonify({"error": f"Missing required fields or invalid number for {asset_type} asset."}), 400

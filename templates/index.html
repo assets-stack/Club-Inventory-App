@@ -714,5 +714,43 @@
             fetchInventory();
             displayDynamicFields(); // Initialize form state
     </script>
+
+    <div id="detail-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden items-center justify-center p-4 z-50 transition-opacity duration-300">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all sm:my-8 sm:align-middle sm:p-6" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+                <div class="flex justify-between items-center border-b pb-3">
+                    <h3 id="modal-title" class="text-2xl font-bold text-gray-900">Asset Details</h3>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div class="py-4 space-y-4">
+                    <div class="flex items-center space-x-4">
+                        <div id="modal-photo-container" class="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border border-gray-300">
+                            <img id="modal-photo" src="" alt="Asset photo" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/96x96/cccccc/333333?text=No+Photo';">
+                        </div>
+                        <div>
+                            <p id="modal-asset-type" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-700 mb-1"></p>
+                            <h4 id="modal-title-main" class="text-xl font-extrabold text-gray-900"></h4>
+                            <p id="modal-location" class="text-sm text-gray-500"></p>
+                        </div>
+                    </div>
+                    <div id="modal-status-badge" class="px-3 py-1 text-sm font-semibold rounded-full w-fit"></div>
+
+                    <div id="modal-specific-details" class="space-y-2 text-sm text-gray-700 bg-gray-50 p-4 rounded-lg border">
+                        <p class="text-md font-semibold text-gray-800 border-b pb-1">Detailed Information:</p>
+                        </div>
+
+                    <div id="modal-notes-container" class="text-sm text-gray-600 border-t pt-3">
+                        <p class="font-semibold text-gray-800">Notes:</p>
+                        <p id="modal-notes" class="whitespace-pre-wrap mt-1 p-2 bg-yellow-50 rounded-lg border border-yellow-200"></p>
+                    </div>
+                </div>
+                <div class="mt-4 flex justify-end">
+                    <button onclick="closeModal()" class="py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
     </body>
 </html>
