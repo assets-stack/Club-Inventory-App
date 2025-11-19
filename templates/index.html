@@ -61,10 +61,13 @@
 
                         <!-- 3. Photo (Shared) -->
                         <div>
-                            <label for="photo" class="block text-sm font-medium text-gray-700">Photo (Optional)</label>
-                            <input type="file" id="photo" name="photo" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-                            <p class="text-xs text-gray-500 mt-1">Uploads will attempt to use GitHub.</p>
+                            <label for="new-item-image-upload" class="block text-sm font-medium text-gray-700">Take Photo or Upload Image (Optional)</label>
+                            <input type="file" id="new-item-image-upload" accept="image/*" capture="environment" 
+                                class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                            <p class="text-xs text-gray-500 mt-1">Uses your camera on mobile and uploads to GitHub.</p>
                         </div>
+
+                        <input type="hidden" id="new-item-photo-url" name="photo_url" value="">
 
                         <button type="submit" id="add-item-button" class="w-full py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition ease-in-out duration-150">
                             Add Asset
@@ -399,6 +402,38 @@
                     showNotification('An unexpected network error occurred during update.', 'error');
                 }
             });
+
+            async function uploadImageToGitHub(file) {
+                const reader = new FileReader();
+
+                // Convert file to Base64 string
+                const base64Content = await new Promise((resolve, reject) => {
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.onerror = error => reject(error);
+                    reader.readAsDataURL(file);
+                });
+
+                const timestamp = new Date().getTime();
+                const fileName = `item_photo_${timestamp}.jpg`;
+
+                // Send the base64 content to the new Flask API endpoint
+                const response = await fetch('/api/upload-photo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        filename: fileName,
+                        content: base64Content
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: 'Unknown upload error.' }));
+                    throw new Error(errorData.error || 'Failed to upload photo to GitHub.');
+                }
+
+                const data = await response.json();
+                return data.photo_url; // Returns the final public URL
+            }
 
             // --- Utility Functions ---
 
@@ -827,8 +862,6 @@
                 });
             }
 
-            
-
             function filterAndSortInventory() {
                 const searchTerm = document.getElementById('search-input').value.toLowerCase();
                 const assetTypeFilter = document.getElementById('filter-asset-type').value;
@@ -880,6 +913,30 @@
                     return;
                 }
 
+                // --- NEW PHOTO UPLOAD LOGIC START ---
+                const imageFile = document.getElementById('new-item-image-upload').files[0];
+                const photoUrlInput = document.getElementById('new-item-photo-url');
+
+                if (imageFile) {
+                    try {
+                        submitButton.disabled = true;
+                        submitButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Uploading Photo...`;
+
+                        // 1. Upload file and get the public URL
+                        const newUrl = await uploadImageToGitHub(imageFile);
+
+                        // 2. Set the hidden photo_url field value for the final submission
+                        photoUrlInput.value = newUrl;
+
+                    } catch (error) {
+                        alert('Error uploading photo: ' + error.message);
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalButtonText;
+                        return; // Stop submission if photo upload fails
+                    }
+                }
+                // --- NEW PHOTO UPLOAD LOGIC END ---
+
                 // Basic validation for Costume Size Inventory
                 if (assetType === 'Costume') {
                     const sizes = formData.getAll('size');
@@ -890,12 +947,12 @@
                     }
                 }
 
-
                 submitButton.disabled = true;
                 submitButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Adding...`;
 
                 try {
                     // POST to /api/items
+                    // The formData now contains the public GitHub URL in the photo_url field
                     const response = await fetch(API_URL, {
                         method: 'POST',
                         body: formData
@@ -916,6 +973,7 @@
                     // Clear the form fields and reset dynamic fields
                     form.reset();
                     displayDynamicFields();
+                    photoUrlInput.value = ''; // Reset hidden field after successful submission
 
                 } catch (error) {
                     console.error('Error adding item:', error);

@@ -179,6 +179,68 @@ def inventory_homepage():
 
 # --- API Endpoints ---
 
+@app.route('/api/upload-photo', methods=['POST'])
+def upload_photo():
+    """Receives a base64 encoded image and uploads it to GitHub, returning the public URL."""
+    data = request.get_json()
+    filename = data.get('filename')
+    base64_content = data.get('content')
+
+    if not filename or not base64_content:
+        return jsonify({"error": "Missing filename or content."}), 400
+
+    if not check_github_creds():
+        print("ERROR: GitHub credentials not set or using placeholders.")
+        return jsonify({"error": "GitHub credentials are not configured on the server."}), 500
+
+    try:
+        # We don't need to decode here, we pass the base64 string directly to GitHub API
+        # but we check if it's valid base64 just in case
+        base64.b64decode(base64_content)
+    except Exception:
+        return jsonify({"error": "Invalid base64 encoding."}), 400
+
+    # 1. Prepare file path and URL
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    path = f"inventory_photos/{timestamp}_{filename}"
+    url = f"https://api.github.com/repos/{github_username}/{github_repo}/contents/{path}"
+
+    headers = {
+        "Authorization": f"token {github_token}",
+        "Content-Type": "application/json"
+    }
+
+    # 2. Build the payload with the Base64 content
+    payload = {
+        "message": f"Upload photo via app: {filename}",
+        "content": base64_content # The raw base64 string from the frontend
+    }
+
+    try:
+        # 3. PUT request to GitHub
+        response = requests.put(url, headers=headers, json=payload, timeout=30)
+        response.raise_for_status()
+
+        # 4. Construct the public raw URL (based on existing logic)
+        raw_url = f"https://{github_username}.github.io/{github_repo}/{path}"
+
+        print(f"Successfully uploaded to GitHub. Raw URL: {raw_url}")
+        return jsonify({"photo_url": raw_url}), 200
+
+    except requests.exceptions.RequestException as e:
+        error_details = {}
+        status_code = 500
+        try:
+            status_code = response.status_code
+            error_details = response.json()
+        except:
+            pass
+
+        error_message = error_details.get('message', 'Unknown server error.')
+
+        print(f"ERROR: GitHub upload failed for {filename}. Status: {status_code}. Details: {error_message}")
+        return jsonify({"error": f"GitHub upload failed (Status {status_code}): {error_message}"}), 500
+
 @app.route('/api/items', methods=['GET'])
 def get_inventory():
     """Fetches all items from Firestore"""
@@ -205,19 +267,15 @@ def add_item():
     asset_type = request.form.get('asset_type')
     photo_file = request.files.get('photo')
 
+    photo_url = request.form.get('photo_url')
+
     if asset_type not in ['Costume', 'Prop', 'Set', 'Tech']:
         return jsonify({"error": "Invalid or missing Asset Type."}), 400
-
-    photo_url = None
-    if photo_file and photo_file.filename:
-        photo_url = upload_to_github(photo_file, photo_file.filename)
-        if not photo_url:
-            photo_url = 'https://placehold.co/80x80/e0e7ff/4338ca?text=Upload+Fail'
 
     new_item_data = {
         'asset_type': asset_type,
         'status': 'Available',
-        'photo_url': photo_url,
+        'photo_url': photo_url if photo_url else 'https://placehold.co/80x80/94a3b8/1e293b?text=No+Photo',
     }
 
     # --- Parse specific fields based on asset_type ---
