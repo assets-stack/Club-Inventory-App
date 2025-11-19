@@ -1094,6 +1094,7 @@
             document.getElementById('add-item-form').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const form = e.target;
+                const formData = new FormData(form);
                 const submitButton = document.getElementById('add-item-button');
                 const originalButtonText = submitButton.innerHTML;
                 const assetType = formData.get('asset_type');
@@ -1115,6 +1116,8 @@
                         // 1. Upload file and get the public URL
                         const newUrl = await uploadImageToGitHub(imageFile);
 
+                        formData.set('photo_url', newUrl);
+
                         // 2. Set the hidden photo_url field value for the final submission
                         photoUrlInput.value = newUrl;
 
@@ -1126,8 +1129,6 @@
                     }
                 }
                 // --- NEW PHOTO UPLOAD LOGIC END ---
-                const formData = new FormData(form);
-
 
                 // Basic validation for Costume Size Inventory
                 if (assetType === 'Costume') {
