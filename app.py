@@ -267,17 +267,21 @@ def get_inventory():
 def add_item():
     """Handles adding a new item based on asset_type."""
     asset_type = request.form.get('asset_type')
-    photo_file = request.files.get('photo')
-
     photo_url = request.form.get('photo_url')
+
+    tags_string = request.form.get('tags')
+    name = request.form.get('name')
 
     if asset_type not in ['Costume', 'Prop', 'Set', 'Tech']:
         return jsonify({"error": "Invalid or missing Asset Type."}), 400
+
+    tags_list = [tag.strip().lower() for tag in tags_string.split(',') if tag.strip()] if tags_string else []
 
     new_item_data = {
         'asset_type': asset_type,
         'status': 'Available',
         'photo_url': photo_url if photo_url else 'https://placehold.co/80x80/94a3b8/1e293b?text=No+Photo',
+        'tags': tags_list,
     }
 
     # --- Parse specific fields based on asset_type ---
@@ -294,6 +298,9 @@ def add_item():
 
         if not type_of_clothing or not storage_location or not sizes:
             return jsonify({"error": "Missing required fields for Costume asset."}), 400
+
+        if name:
+            new_item_data['name'] = name.strip()
 
         size_inventory = []
         for size, count in zip(sizes, counts):
@@ -313,7 +320,8 @@ def add_item():
         })
 
     elif asset_type == 'Prop' or asset_type == 'Set' or asset_type == 'Tech':
-        name = request.form.get('name')
+        if name:
+            new_item_data['name'] = name.strip()
         number = request.form.get('number')
         storage_location = request.form.get('storage_location')
         notes = request.form.get('notes')
@@ -443,6 +451,13 @@ def edit_item(item_id):
         final_update['storage_location'] = update_data['storage_location']
     if 'notes' in update_data:
         final_update['notes'] = update_data['notes']
+    if 'name' in update_data:
+        final_update['name'] = update_data['name']
+    if 'tags' in update_data:
+        if isinstance(update_data['tags'], list):
+            final_update['tags'] = update_data['tags']
+        else:
+            return jsonify({"error": "Tags must be provided as a list."}), 400
 
     if not final_update:
         return jsonify({"error": "No valid fields provided for update."}), 400
