@@ -280,7 +280,7 @@ def add_item():
     new_item_data = {
         'asset_type': asset_type,
         'status': 'Available',
-        'photo_url': photo_url if photo_url else 'https://placehold.co/80x80/94a3b8/1e293b?text=No+Photo',
+        'photo_url': photo_url if photo_url else None,
         'tags': tags_list,
     }
 
