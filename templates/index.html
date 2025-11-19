@@ -1094,7 +1094,6 @@
             document.getElementById('add-item-form').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const form = e.target;
-                const formData = new FormData(form);
                 const submitButton = document.getElementById('add-item-button');
                 const originalButtonText = submitButton.innerHTML;
                 const assetType = formData.get('asset_type');
@@ -1127,6 +1126,8 @@
                     }
                 }
                 // --- NEW PHOTO UPLOAD LOGIC END ---
+                const formData = new FormData(form);
+
 
                 // Basic validation for Costume Size Inventory
                 if (assetType === 'Costume') {
