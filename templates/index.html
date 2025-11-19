@@ -1093,61 +1093,58 @@
             // 1. Add Item
             document.getElementById('add-item-form').addEventListener('submit', async function(e) {
                 e.preventDefault();
-
                 const form = e.target;
+                const formData = new FormData(form);
                 const submitButton = document.getElementById('add-item-button');
-                const photoInput = document.getElementById('new-item-image-upload');
+                const originalButtonText = submitButton.innerHTML;
+                const assetType = formData.get('asset_type');
+
+                if (!assetType) {
+                    showNotification('Please select an Asset Type.', 'error');
+                    return;
+                }
+
+                // --- PHOTO UPLOAD LOGIC START ---
+                const imageFile = document.getElementById('new-item-image-upload').files[0];
                 const photoUrlInput = document.getElementById('new-item-photo-url');
 
-                // Reset photo URL field
-                photoUrlInput.value = '';
+                if (imageFile) {
+                    try {
+                        submitButton.disabled = true;
+                        submitButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Uploading Photo...`;
 
-                // Temporarily disable button and show loading state
+                        // 1. Upload file and get the public URL
+                        const newUrl = await uploadImageToGitHub(imageFile);
+
+                        // 2. Set the hidden photo_url field value for the final submission
+                        photoUrlInput.value = newUrl;
+
+                    } catch (error) {
+                        alert('Error uploading photo: ' + error.message);
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalButtonText;
+                        return; // Stop submission if photo upload fails
+                    }
+                }
+                // --- NEW PHOTO UPLOAD LOGIC END ---
+
+                // Basic validation for Costume Size Inventory
+                if (assetType === 'Costume') {
+                    const sizes = formData.getAll('size');
+                    const counts = formData.getAll('count');
+                    if (sizes.length === 0 || sizes.some(s => s.trim() === '') || counts.some(c => parseInt(c) < 1)) {
+                        showNotification('Costumes require at least one Size and Number entry, with Number > 0.', 'error');
+                        return;
+                    }
+                }
+
                 submitButton.disabled = true;
                 submitButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Adding...`;
 
                 try {
-                    // --- PHOTO UPLOAD LOGIC ---
-                    if (photoInput.files.length > 0) {
-                        showNotification('Uploading photo to GitHub...', 'info');
-                        const file = photoInput.files[0];
-
-                        // 2. AWAIT the asynchronous photo upload
-                        const githubUrl = await uploadImageToGitHub(file);
-
-                        if (githubUrl) {
-                            // 3. Set the hidden form field with the actual, newly uploaded URL
-                            photoUrlInput.value = githubUrl;
-                            showNotification('Photo uploaded successfully. Saving asset details...', 'info');
-                        } else {
-                            // If the upload failed, clear the field but allow item to save without a photo
-                            showNotification('Photo upload failed. Saving asset details without photo.', 'error');
-                        }
-                    }
-
-                    // Prepare final form data (including the new photo_url value)
-                    const formData = new FormData(form);
-                    const assetType = formData.get('asset_type');
-
-                    // Re-process size_inventory for Costumes if needed (must be done before final POST)
-                    if (assetType === 'Costume') {
-                        const sizes = formData.getAll('size');
-                        const counts = formData.getAll('count');
-                        if (sizes.length === 0 || sizes.some(s => s.trim() === '') || counts.some(c => parseInt(c) < 1)) {
-                            showNotification('Costumes require at least one Size and Number entry, with Number > 0.', 'error');
-                            submitButton.disabled = false;
-                            submitButton.innerHTML = `Add Asset`;
-                            return;
-                        }
-                        const sizeInventory = sizes.map((size, index) => ({ size: size, count: parseInt(counts[index]) || 0 }));
-                        formData.delete('size');
-                        formData.delete('count');
-                        formData.append('size_inventory', JSON.stringify(sizeInventory));
-                    }
-
-                    // --- ITEM SUBMISSION LOGIC ---
-                    // 4. POST to /api/items with the complete FormData
-                    const response = await fetch('/api/items', {
+                    // POST to /api/items
+                    // The formData now contains the public GitHub URL in the photo_url field
+                    const response = await fetch(API_URL, {
                         method: 'POST',
                         body: formData
                     });
@@ -1158,21 +1155,23 @@
                     }
 
                     const newItem = await response.json();
-                    showNotification(`Successfully added asset: ${newItem.asset_type}!`, 'success');
+
+                    showNotification(`Successfully added asset: ${newItem.asset_type}!`);
+
+                    // Refresh data and UI
+                    await fetchInventory();
 
                     // Clear the form fields and reset dynamic fields
                     form.reset();
                     displayDynamicFields();
                     photoUrlInput.value = ''; // Reset hidden field after successful submission
-                    photoInput.value = ''; // Reset the file input
-                    await fetchInventory(); // Refresh data and UI
 
                 } catch (error) {
                     console.error('Error adding item:', error);
-                    showNotification(error.message || 'Failed to add asset.', 'error');
+                    showNotification(error.message || 'An unknown error occurred while adding the asset.', 'error');
                 } finally {
                     submitButton.disabled = false;
-                    submitButton.innerHTML = `Add Asset`;
+                    submitButton.innerHTML = originalButtonText;
                 }
             });
 
