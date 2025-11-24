@@ -196,7 +196,7 @@
 
                 <div class="p-4 border-t flex justify-between flex-shrink-0">
                     <div>
-                        <button type="button" id="edit-button" onclick="toggleEditMode(true)" class="py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition">
+                        <button type="button" id="edit-button" onclick="toggleEditMode(true, currentItemData)" class="py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition">
                             <i class="fas fa-edit mr-2"></i>Edit Info
                         </button>
                     </div>
@@ -231,7 +231,7 @@
                 modal.classList.add('flex');
 
                 // Set Edit Mode to read-only initially
-                toggleEditMode(false);
+                toggleEditMode(false, item);
 
                 // Get all form elements
                 document.getElementById('edit-item-id').value = item.id;
@@ -323,13 +323,20 @@
                 detailsContainer.innerHTML = detailsHtml;
             }
 
-            function toggleEditMode(isEditing) {
+            function toggleEditMode(isEditing, item) {
                 const editButton = document.getElementById('edit-button');
                 const saveButton = document.getElementById('save-button');
                 const editableFields = document.querySelectorAll('.read-mode');
 
                 const addSizeButton = document.getElementById('add-edit-size-button');
                 const removeRowButtons = document.querySelectorAll('.remove-size-button');
+
+                console.log("--- DEBUG START ---");
+                console.log("Current Item Data:", currentItem);
+                console.log("Attempting to get asset_type:", currentItem ? currentItem.asset_type : "Item is null");
+                console.log("Attempting to get assetType:", currentItem ? currentItem.assetType : "Item is null");
+                console.log("--- DEBUG END ---");
+                document.getElementById('edit-asset-type').value = item.asset_type;
 
                 if (isEditing) {
                     editButton.classList.add('hidden');
@@ -378,7 +385,7 @@
 
             function closeModal() {
                 // Reset edit mode when closing
-                toggleEditMode(false);
+                toggleEditMode(false, currentItem);
                 const modal = document.getElementById('detail-modal');
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
