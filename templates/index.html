@@ -332,9 +332,9 @@
                 const removeRowButtons = document.querySelectorAll('.remove-size-button');
 
                 console.log("--- DEBUG START ---");
-                console.log("Current Item Data:", currentItem);
-                console.log("Attempting to get asset_type:", currentItem ? currentItem.asset_type : "Item is null");
-                console.log("Attempting to get assetType:", currentItem ? currentItem.assetType : "Item is null");
+                console.log("Current Item Data:", item);
+                console.log("Attempting to get asset_type:", item ? item.asset_type : "Item is null");
+                console.log("Attempting to get assetType:", item ? item.assetType : "Item is null");
                 console.log("--- DEBUG END ---");
                 document.getElementById('edit-asset-type').value = item.asset_type;
 
