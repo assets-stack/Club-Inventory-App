@@ -331,13 +331,6 @@
                 const addSizeButton = document.getElementById('add-edit-size-button');
                 const removeRowButtons = document.querySelectorAll('.remove-size-button');
 
-                console.log("--- DEBUG START ---");
-                console.log("Current Item Data:", item);
-                console.log("Attempting to get asset_type:", item ? item.asset_type : "Item is null");
-                console.log("Attempting to get assetType:", item ? item.assetType : "Item is null");
-                console.log("--- DEBUG END ---");
-                document.getElementById('edit-asset-type').value = item.asset_type;
-
                 if (isEditing) {
                     editButton.classList.add('hidden');
                     saveButton.classList.remove('hidden');
@@ -385,7 +378,7 @@
 
             function closeModal() {
                 // Reset edit mode when closing
-                toggleEditMode(false, currentItem);
+                toggleEditMode(false, currentItemData);
                 const modal = document.getElementById('detail-modal');
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
@@ -400,7 +393,7 @@
                 e.preventDefault();
 
                 const itemId = document.getElementById('edit-item-id').value;
-                const assetType = currentItemData.asset_type;
+                const assetType = document.getElementById('edit-asset-type').value;
 
                 const formData = new FormData(this);
 
@@ -422,6 +415,7 @@
                 const tags = tagsString ? tagsString.split(',').map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0) : [];
 
                 const updateData = {
+                    asset_type: assetType,
                     storage_location: formData.get('storage_location'),
                     notes: formData.get('notes'),
                     name: name,
